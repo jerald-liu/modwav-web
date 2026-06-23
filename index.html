@@ -418,6 +418,24 @@
   .seq-row[data-track="2"] .step{ --track-color: #6FA8FF; }
   .seq-row[data-track="3"] .step{ --track-color: #E8D14C; }
 
+  /* acid pitch steps: drag up/down to retune */
+  .step-pitch{
+    touch-action: none;
+    cursor: ns-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step-pitch .note-name{
+    font-size: 0.5rem;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    color: var(--ink-dim);
+    pointer-events: none;
+    user-select: none;
+  }
+  .step-pitch.on .note-name{ color: #0E0E0D; font-weight: 600; }
+
   .ctrl-row{
     display:flex;
     gap: 1.6rem;
@@ -758,6 +776,11 @@ const DEFAULT_PATTERN = {
 
 const ACID_ACCENT = [1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,0,0];
 const ACID_NOTES = [36,36,39,41, 36,36,43,36, 39,41,36,36, 44,36,41,39];
+const ACID_NOTE_MIN = 24; // C1
+const ACID_NOTE_MAX = 60; // C4
+
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function noteName(m){ return NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1); }
 
 const pattern = {};
 TRACKS.forEach(t => pattern[t.id] = DEFAULT_PATTERN[t.id].slice());
@@ -797,13 +820,52 @@ TRACKS.forEach((track, ti)=>{
     btn.dataset.step = s;
     if(s % 4 === 0) btn.dataset.beat = '0';
     if(pattern[track.id][s]) btn.classList.add('on');
-    btn.addEventListener('click', ()=>{
+
+    function toggleStep(){
       pattern[track.id][s] = pattern[track.id][s] ? 0 : 1;
       btn.classList.toggle('on');
-      // sync bar mini grid
       const barStep = barSeqEl.querySelector(`.bar-step[data-track="${track.id}"][data-step="${s}"]`);
       if(barStep) barStep.classList.toggle('on');
-    });
+    }
+
+    if(track.id === 'acid'){
+      // acid steps carry a per-step pitch; drag up/down to retune, click to toggle
+      btn.classList.add('step-pitch');
+      const noteLabel = document.createElement('span');
+      noteLabel.className = 'note-name mono';
+      noteLabel.textContent = noteName(ACID_NOTES[s]);
+      btn.appendChild(noteLabel);
+
+      let dragging = false, moved = false, startY = 0, startNote = 0;
+      const PX_PER_SEMITONE = 8;
+
+      btn.addEventListener('pointerdown', (e)=>{
+        dragging = true; moved = false;
+        startY = e.clientY;
+        startNote = ACID_NOTES[s];
+        try { btn.setPointerCapture(e.pointerId); } catch(_){}
+        e.preventDefault();
+      });
+      btn.addEventListener('pointermove', (e)=>{
+        if(!dragging) return;
+        const dy = startY - e.clientY;
+        if(Math.abs(dy) > 3) moved = true;
+        const semis = Math.round(dy / PX_PER_SEMITONE);
+        const next = Math.max(ACID_NOTE_MIN, Math.min(ACID_NOTE_MAX, startNote + semis));
+        if(next !== ACID_NOTES[s]){
+          ACID_NOTES[s] = next;
+          noteLabel.textContent = noteName(next);
+        }
+      });
+      btn.addEventListener('pointerup', (e)=>{
+        if(!dragging) return;
+        dragging = false;
+        try { btn.releasePointerCapture(e.pointerId); } catch(_){}
+        if(!moved) toggleStep(); // a tap with no drag = toggle on/off
+      });
+    } else {
+      btn.addEventListener('click', toggleStep);
+    }
     row.appendChild(btn);
   }
   seqEl.appendChild(row);
