@@ -325,6 +325,40 @@
     margin-bottom: 1.2rem;
   }
 
+  /* fixed background waveform — top third of viewport, behind content */
+  #bgScope{
+    position: fixed;
+    top: 8vh;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 26vh;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.32;
+  }
+  /* soft veil over the waveform so text reads cleanly on top */
+  .bg-veil{
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50vh;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at 50% 35%, rgba(14,14,13,0) 0%, rgba(14,14,13,0.55) 70%, rgba(14,14,13,0.85) 100%),
+      linear-gradient(to bottom, rgba(14,14,13,0.0) 0%, rgba(14,14,13,0.0) 60%, var(--bg) 100%);
+  }
+  /* lift readable content above the bg layers */
+  .nav, section, .rule, footer, .synth-bar, .synth-overlay{
+    position: relative;
+    z-index: 2;
+  }
+  .nav{ position: fixed; }
+  .synth-bar{ position: fixed; z-index: 100; }
+  .synth-overlay{ position: fixed; z-index: 200; }
+
   .seq{
     display: grid;
     grid-template-columns: 64px 1fr 84px;
@@ -711,6 +745,9 @@
 </style>
 </head>
 <body>
+
+<canvas id="bgScope" aria-hidden="true"></canvas>
+<div class="bg-veil" aria-hidden="true"></div>
 
 <nav class="nav"><span>MOD.WAV</span><span>SF</span></nav>
 
@@ -1602,65 +1639,77 @@ barPlayBtn.addEventListener('click', (e)=>{
 /* ---------------- oscilloscope draw ---------------- */
 const canvas = document.getElementById('scope');
 const cctx = canvas.getContext('2d');
+const bgCanvas = document.getElementById('bgScope');
+const bgCtx = bgCanvas.getContext('2d');
 let dataArray;
 
-function resizeCanvas(){
+function resizeOne(c){
   const ratio = window.devicePixelRatio || 1;
-  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const w = c.clientWidth, h = c.clientHeight;
   if(w === 0 || h === 0) return;
-  canvas.width = w * ratio;
-  canvas.height = h * ratio;
-  cctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  c.width = w * ratio;
+  c.height = h * ratio;
+  c.getContext('2d').setTransform(ratio, 0, 0, ratio, 0, 0);
+}
+function resizeCanvas(){
+  resizeOne(canvas);
+  resizeOne(bgCanvas);
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-function drawIdle(t){
-  const w = canvas.clientWidth, h = canvas.clientHeight;
+function drawIdleTo(ctx2d, c, t, ampScale){
+  const w = c.clientWidth, h = c.clientHeight;
   if(w === 0) return;
-  cctx.clearRect(0,0,w,h);
-  cctx.beginPath();
-  cctx.strokeStyle = '#4A4842';
-  cctx.lineWidth = 1.2;
+  ctx2d.clearRect(0,0,w,h);
+  ctx2d.beginPath();
+  ctx2d.strokeStyle = '#4A4842';
+  ctx2d.lineWidth = 1.2;
   const midY = h/2;
+  const amp = 7 * ampScale;
   for(let x=0; x<w; x++){
-    const y = midY + Math.sin((x*0.045) + t*0.0017) * 7 * Math.sin(t*0.0004);
-    if(x===0) cctx.moveTo(x,y); else cctx.lineTo(x,y);
+    const y = midY + Math.sin((x*0.045) + t*0.0017) * amp * Math.sin(t*0.0004);
+    if(x===0) ctx2d.moveTo(x,y); else ctx2d.lineTo(x,y);
   }
-  cctx.stroke();
+  ctx2d.stroke();
 }
 
-function drawLive(){
-  analyser.getByteTimeDomainData(dataArray);
-  const w = canvas.clientWidth, h = canvas.clientHeight;
+function drawLiveTo(ctx2d, c, glow){
+  const w = c.clientWidth, h = c.clientHeight;
   if(w === 0) return;
-  cctx.clearRect(0,0,w,h);
-  cctx.beginPath();
-  cctx.strokeStyle = '#8FFFC4';
-  cctx.lineWidth = 1.4;
-  cctx.shadowColor = 'rgba(143,255,196,0.45)';
-  cctx.shadowBlur = 4;
+  ctx2d.clearRect(0,0,w,h);
+  ctx2d.beginPath();
+  ctx2d.strokeStyle = '#8FFFC4';
+  ctx2d.lineWidth = 1.4;
+  if(glow){
+    ctx2d.shadowColor = 'rgba(143,255,196,0.45)';
+    ctx2d.shadowBlur = 4;
+  }
   const sliceWidth = w / dataArray.length;
   let x = 0;
   for(let i=0; i<dataArray.length; i++){
     const v = dataArray[i] / 128.0;
     const y = (v * h) / 2;
-    if(i===0) cctx.moveTo(x,y); else cctx.lineTo(x,y);
+    if(i===0) ctx2d.moveTo(x,y); else ctx2d.lineTo(x,y);
     x += sliceWidth;
   }
-  cctx.stroke();
-  cctx.shadowBlur = 0;
+  ctx2d.stroke();
+  if(glow) ctx2d.shadowBlur = 0;
 }
 
 function loop(t){
   if(synthOverlay.classList.contains('open')){
-    resizeCanvas();
+    resizeOne(canvas);
   }
+  resizeOne(bgCanvas);
   if(running && analyser){
     if(!dataArray) dataArray = new Uint8Array(analyser.fftSize);
-    drawLive();
+    drawLiveTo(cctx, canvas, true);
+    drawLiveTo(bgCtx, bgCanvas, false);
   } else {
-    drawIdle(t);
+    drawIdleTo(cctx, canvas, t, 1);
+    // background idle wave: bigger amplitude scaled to its height
+    drawIdleTo(bgCtx, bgCanvas, t, Math.max(1, bgCanvas.clientHeight / 86));
   }
   requestAnimationFrame(loop);
 }
