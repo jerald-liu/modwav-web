@@ -30,6 +30,7 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    padding-bottom: 64px;
   }
 
   .mono{
@@ -142,7 +143,6 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.78rem;
     color: var(--ink-dim);
-    margin-bottom: 2.1rem;
   }
   .meta-row div span{
     display:block;
@@ -151,21 +151,145 @@
     margin-top: 0.25rem;
   }
 
-  /* ---------- synth panel ---------- */
-  .panel{
+  /* ---------- floating bottom bar ---------- */
+  .synth-bar{
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(22,22,19,0.75);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line);
+    padding: 0.6rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.3s, background 0.3s;
+  }
+  .synth-bar:hover{
+    opacity: 1;
+    background: rgba(22,22,19,0.92);
+  }
+  .synth-bar .bar-label{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .synth-bar .bar-status{
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  .synth-bar .bar-play{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    background: none;
     border: 1px solid var(--line);
+    padding: 0.3rem 0.6rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    flex-shrink: 0;
+  }
+  .synth-bar .bar-play:hover{ border-color: var(--signal); color: var(--ink); }
+
+  .bar-seq{
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+    max-width: 480px;
+  }
+  .bar-seq-row{
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 2px;
+  }
+  .bar-step{
+    height: 6px;
+    border-radius: 1px;
+    background: var(--line);
+  }
+  .bar-step.on{
+    background: var(--track-color, var(--signal));
+    opacity: 0.7;
+  }
+  .bar-seq-row:nth-child(1) .bar-step{ --track-color: #FF6A1A; }
+  .bar-seq-row:nth-child(2) .bar-step{ --track-color: #8FFFC4; }
+  .bar-seq-row:nth-child(3) .bar-step{ --track-color: #6FA8FF; }
+  .bar-seq-row:nth-child(4) .bar-step{ --track-color: #E8D14C; }
+  .bar-step.playhead{
+    opacity: 1;
+    box-shadow: 0 0 3px var(--track-color, var(--signal));
+  }
+
+  /* ---------- synth modal ---------- */
+  .synth-overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .synth-overlay.open{
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .synth-modal{
     background: var(--bg-raised);
-    border-radius: 6px;
-    padding: 1.4rem 1.4rem 1.2rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.6rem;
+    width: 90%;
+    max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
   }
-  @media (max-width: 560px){
-    .panel{ padding: 1.1rem 0.85rem 1rem; }
+  .synth-modal-close{
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    line-height: 1;
+    transition: border-color 0.2s, color 0.2s;
   }
+  .synth-modal-close:hover{ border-color: var(--ink-dim); color: var(--ink); }
+
+  /* ---------- synth panel (inside modal) ---------- */
   .panel-head{
     display:flex;
     align-items: baseline;
     justify-content: space-between;
     margin-bottom: 1rem;
+    padding-right: 2.2rem;
   }
   .panel-head .label{
     font-family: 'JetBrains Mono', monospace;
@@ -242,7 +366,6 @@
     position: relative;
   }
   .step:hover{ border-color: var(--ink-dim); }
-  /* beat markers: slightly stronger border every 4th step */
   .step[data-beat="0"]{ border-left-color: #3A3A35; }
   .step.on{
     background: var(--track-color, var(--signal));
@@ -264,34 +387,6 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.68rem;
     color: var(--ink-dim);
-  }
-  .ctrl{
-    display:flex;
-    align-items:center;
-    gap: 0.55rem;
-  }
-  .ctrl input[type="range"]{
-    -webkit-appearance: none;
-    width: 84px;
-    height: 2px;
-    background: var(--line);
-    outline: none;
-    border-radius: 2px;
-  }
-  .ctrl input[type="range"]::-webkit-slider-thumb{
-    -webkit-appearance: none;
-    width: 11px; height: 11px;
-    border-radius: 50%;
-    background: var(--ink);
-    cursor: pointer;
-    border: none;
-  }
-  .ctrl input[type="range"]::-moz-range-thumb{
-    width: 11px; height: 11px;
-    border-radius: 50%;
-    background: var(--ink);
-    cursor: pointer;
-    border: none;
   }
 
   .synth-start{
@@ -443,25 +538,12 @@
 <section class="hero">
   <p class="eyebrow mono">A live hardware night — San Francisco</p>
   <h1>Patch in.<br>Show up.</h1>
-  <p class="sub">Synths, modular rigs, MIDI controllers, anything with a panel and a patch cable. <b>Monthly, Thursdays.</b> Part performance, part open workshop — and every session gets recorded and shared, so the room doesn't end when the night does.</p>
+  <p class="sub">Synths, modular rigs, anything with a patch cable. <b>Monthly, Thursdays.</b> Every session recorded and released.</p>
 
   <div class="meta-row">
     <div>WHERE<span>Aurora SF</span></div>
     <div>WHEN<span>Monthly · Thu</span></div>
     <div>COST<span>Free</span></div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-head">
-      <span class="label">SIGNAL GENERATOR</span>
-      <span class="status"><span class="dot" id="statusDot"></span><span id="statusText">STOPPED</span></span>
-    </div>
-    <canvas id="scope" width="600" height="86"></canvas>
-    <div class="seq" id="seq"></div>
-    <div class="ctrl-row">
-      <button class="synth-start" id="synthToggle">Play</button>
-    </div>
-    <p class="panel-hint">tap a step to program it — 4 tracks, 16 steps, stopped by default</p>
   </div>
 </section>
 
@@ -471,9 +553,8 @@
 <section class="reveal">
   <p class="kicker">The idea</p>
   <h2>Everything past CDJs and a 4-track mixer.</h2>
-  <p class="lede">Mod.wav is a monthly night built around live hardware — the layer of electronic music that usually stays in bedrooms, builder Discords, and one-off warehouse meetups.</p>
-  <p>Some sets are full live performances from booked artists. Some are smaller "bring your rig" slots, where people from the local builder scene plug in and show what they've been working on. A few stations are left open and plug-and-play, so people who aren't performing yet can still get hands-on instead of just watching from across the room.</p>
-  <p>Every session is recorded straight off the board and released online — credited to whoever played that night. No open submissions, no sample packs assembled after the fact. Just what actually happened in the room, for people who couldn't make it out.</p>
+  <p class="lede">The layer of electronic music that stays in bedrooms and builder Discords. We give it a room.</p>
+  <p>Booked sets. Bring-your-rig slots. Open stations for anyone who wants to plug in. Recorded off the board, released online, credited to whoever played.</p>
 </section>
 
 <hr class="rule">
@@ -484,17 +565,17 @@
   <h2>Low-stakes by design.</h2>
   <dl class="spec-grid">
     <dt>What</dt>
-    <dd>Hardware-centric performance + workshop night. Plug-and-play stations alongside booked live sets.</dd>
+    <dd>Live hardware sets + open stations</dd>
     <dt>Where</dt>
     <dd>Aurora SF, 302 Valencia St</dd>
     <dt>When</dt>
-    <dd>Monthly, Thursdays — occasional exceptions for booked performances</dd>
+    <dd>Monthly, Thursdays</dd>
     <dt>Cost</dt>
     <dd>Free</dd>
     <dt>Crew</dt>
-    <dd>Volunteer-run, with occasional co-promoted nights alongside partner crews</dd>
+    <dd>Volunteer-run</dd>
     <dt>Audience</dt>
-    <dd>Builders, modular/synth heads, instrumentalists, the just-curious</dd>
+    <dd>Builders, synth heads, the curious</dd>
   </dl>
   <div class="crumbs">
     <span class="crumb mono">Eurorack</span>
@@ -511,7 +592,7 @@
 <section class="reveal">
   <p class="kicker">After the night</p>
   <h2>The room doesn't stop at last call.</h2>
-  <p>Each session gets recorded live and put out online — probably Bandcamp, kept flexible depending on how each contributor wants their work framed — credited to whoever played. It's a way for people who couldn't be there in person, or aren't ready to perform hardware live yet, to still stay connected to what the room actually produced.</p>
+  <p>Recorded live off the board. Released online, credited to whoever played.</p>
 </section>
 
 <hr class="rule">
@@ -529,6 +610,33 @@
   </div>
 </footer>
 
+<!-- ================= FLOATING SYNTH BAR ================= -->
+<div class="synth-bar" id="synthBar">
+  <span class="bar-label">SIGNAL GENERATOR</span>
+  <div class="bar-seq" id="barSeq"></div>
+  <div class="bar-status">
+    <span class="dot" id="statusDot"></span>
+  </div>
+  <button class="bar-play" id="barPlayBtn">Play</button>
+</div>
+
+<!-- ================= SYNTH MODAL ================= -->
+<div class="synth-overlay" id="synthOverlay">
+  <div class="synth-modal">
+    <button class="synth-modal-close" id="synthClose">✕</button>
+    <div class="panel-head">
+      <span class="label">SIGNAL GENERATOR</span>
+      <span class="status"><span class="dot" id="modalDot"></span><span id="statusText">STOPPED</span></span>
+    </div>
+    <canvas id="scope" width="600" height="86"></canvas>
+    <div class="seq" id="seq"></div>
+    <div class="ctrl-row">
+      <button class="synth-start" id="synthToggle">Play</button>
+    </div>
+    <p class="panel-hint">tap a step to program it</p>
+  </div>
+</div>
+
 <script>
 /* ---------------- scroll reveal ---------------- */
 const revealEls = document.querySelectorAll('.reveal');
@@ -539,6 +647,32 @@ revealEls.forEach(el=>io.observe(el));
 
 document.getElementById('year').textContent = new Date().getFullYear();
 
+/* ---------------- modal open/close ---------------- */
+const synthBar = document.getElementById('synthBar');
+const synthOverlay = document.getElementById('synthOverlay');
+const synthClose = document.getElementById('synthClose');
+const barPlayBtn = document.getElementById('barPlayBtn');
+
+function openModal(){
+  synthOverlay.classList.add('open');
+  resizeCanvas();
+}
+function closeModal(){
+  synthOverlay.classList.remove('open');
+}
+
+synthBar.addEventListener('click', (e)=>{
+  if(e.target === barPlayBtn || barPlayBtn.contains(e.target)) return;
+  openModal();
+});
+synthClose.addEventListener('click', closeModal);
+synthOverlay.addEventListener('click', (e)=>{
+  if(e.target === synthOverlay) closeModal();
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape') closeModal();
+});
+
 /* ---------------- step sequencer ---------------- */
 let ctx = null;
 let masterGain = null;
@@ -548,7 +682,7 @@ let droneNodes = [];
 
 const STEPS = 16;
 const TEMPO_BPM = 140;
-const STEP_SECONDS = 60 / TEMPO_BPM / 4; // 16th notes
+const STEP_SECONDS = 60 / TEMPO_BPM / 4;
 
 const TRACKS = [
   { id:'kick',  label:'KICK'  },
@@ -557,7 +691,6 @@ const TRACKS = [
   { id:'acid',  label:'ACID'  },
 ];
 
-// simple default pattern — sounds like something the instant you hit play
 const DEFAULT_PATTERN = {
   kick:  [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
   snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1],
@@ -565,17 +698,30 @@ const DEFAULT_PATTERN = {
   acid:  [1,1,0,1, 0,0,1,0, 1,1,0,0, 1,0,1,0],
 };
 
-// per-step accent for the acid line — every 3rd active step hits harder, 303-style
 const ACID_ACCENT = [1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,0,0];
-
-// acid note per step (scale degrees around a low root — slides happen automatically
-// whenever two consecutive steps are both active, classic 303 behavior)
-const ACID_NOTES = [36,36,39,41, 36,36,43,36, 39,41,36,36, 44,36,41,39]; // MIDI note numbers
+const ACID_NOTES = [36,36,39,41, 36,36,43,36, 39,41,36,36, 44,36,41,39];
 
 const pattern = {};
 TRACKS.forEach(t => pattern[t.id] = DEFAULT_PATTERN[t.id].slice());
 
-// build the grid
+/* ---- build mini bar sequencer ---- */
+const barSeqEl = document.getElementById('barSeq');
+TRACKS.forEach((track, ti)=>{
+  const row = document.createElement('div');
+  row.className = 'bar-seq-row';
+  row.dataset.track = ti;
+  for(let s=0; s<STEPS; s++){
+    const dot = document.createElement('div');
+    dot.className = 'bar-step';
+    dot.dataset.track = track.id;
+    dot.dataset.step = s;
+    if(pattern[track.id][s]) dot.classList.add('on');
+    row.appendChild(dot);
+  }
+  barSeqEl.appendChild(row);
+});
+
+/* ---- build modal sequencer grid ---- */
 const seqEl = document.getElementById('seq');
 TRACKS.forEach((track, ti)=>{
   const label = document.createElement('div');
@@ -596,6 +742,9 @@ TRACKS.forEach((track, ti)=>{
     btn.addEventListener('click', ()=>{
       pattern[track.id][s] = pattern[track.id][s] ? 0 : 1;
       btn.classList.toggle('on');
+      // sync bar mini grid
+      const barStep = barSeqEl.querySelector(`.bar-step[data-track="${track.id}"][data-step="${s}"]`);
+      if(barStep) barStep.classList.toggle('on');
     });
     row.appendChild(btn);
   }
@@ -604,6 +753,7 @@ TRACKS.forEach((track, ti)=>{
 
 const toggleBtn = document.getElementById('synthToggle');
 const statusDot = document.getElementById('statusDot');
+const modalDot = document.getElementById('modalDot');
 const statusText = document.getElementById('statusText');
 
 function ensureAudio(){
@@ -616,10 +766,9 @@ function ensureAudio(){
   masterGain.connect(analyser);
   analyser.connect(ctx.destination);
 
-  // soft ambient drone bed, very low, so the page has a faint pulse even when stopped
   const drone = ctx.createOscillator();
   drone.type = 'sine';
-  drone.frequency.value = 65.41; // C2
+  drone.frequency.value = 65.41;
   const droneGain = ctx.createGain();
   droneGain.gain.value = 0.0;
   drone.connect(droneGain);
@@ -628,10 +777,7 @@ function ensureAudio(){
   droneNodes = [drone, droneGain];
 }
 
-/* ---- 909-style drum voices: modeled on the original's analog synthesis, not samples ---- */
 function playKick(t){
-  // triangle-core oscillator with a fast pitch envelope, like the 909's VCO+VCA core
-  // pitched down 7 semitones from the original (ratio ~0.6674)
   const osc = ctx.createOscillator();
   osc.type = 'triangle';
   osc.frequency.setValueAtTime(38.7, t);
@@ -641,15 +787,13 @@ function playKick(t){
   const ampEnv = ctx.createGain();
   ampEnv.gain.setValueAtTime(0.0001, t);
   ampEnv.gain.exponentialRampToValueAtTime(1.0, t + 0.002);
-  ampEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.55); // longer tail
+  ampEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
 
-  // a touch of waveshaping for the 909's characteristic edge
   const shaper = ctx.createWaveShaper();
   const curve = new Float32Array(256);
   for(let i=0;i<256;i++){ const x = (i/255)*2-1; curve[i] = Math.tanh(x*2.2); }
   shaper.curve = curve;
 
-  // short click transient for attack snap
   const click = ctx.createOscillator();
   click.type = 'square';
   click.frequency.value = 1800;
@@ -668,7 +812,6 @@ function playKick(t){
 }
 
 function playSnare(t){
-  // 909 snare = two detuned tonal oscillators (body) + filtered noise (snap)
   const osc1 = ctx.createOscillator();
   osc1.type = 'triangle';
   osc1.frequency.value = 190;
@@ -715,7 +858,6 @@ function playSnare(t){
 }
 
 function playHat(t){
-  // 909 hats: six square oscillators at inharmonic ratios through a highpass — metallic ring
   const ratios = [1, 1.342, 1.787, 2.0, 2.245, 2.6];
   const fundamental = 245;
   const hatGain = ctx.createGain();
@@ -742,16 +884,13 @@ function playHat(t){
   env.connect(masterGain);
 }
 
-/* ---- acid line: sawtooth -> resonant lowpass with envelope + accent + auto-slide ---- */
 let acidLastFreq = null;
 
 function midiToFreq(m){ return 440 * Math.pow(2, (m-69)/12); }
 
-// deterministic pseudo-random per step, so the same pattern always sounds the same
-// but each step has its own slight character (like nudging the env-mod/decay knobs note to note)
 function stepWobble(stepIndex, salt){
   const x = Math.sin(stepIndex * 12.9898 + salt * 78.233) * 43758.5453;
-  return x - Math.floor(x); // 0..1
+  return x - Math.floor(x);
 }
 
 function playAcid(t, stepIndex, sliding){
@@ -759,22 +898,17 @@ function playAcid(t, stepIndex, sliding){
   const freq = midiToFreq(note);
   const accented = !!ACID_ACCENT[stepIndex % ACID_ACCENT.length];
 
-  // per-step wobble: each one nudges cutoff/resonance/decay a little differently
   const wCutoff = stepWobble(stepIndex, 1);
   const wReso = stepWobble(stepIndex, 2);
   const wDecay = stepWobble(stepIndex, 3);
 
   const q = (accented ? 11 : 6) + wReso * 7;
   const peakGain = accented ? 0.34 : 0.22;
-  // decay length varies per step — stretched out for a longer, more smeared acid tail
   const noteLen = STEP_SECONDS * (1.3 + wDecay * 1.1);
-  const noteTrack = (freq / midiToFreq(36)) * 400; // higher notes push cutoff brighter
+  const noteTrack = (freq / midiToFreq(36)) * 400;
   const cutoffPeak = (accented ? 2800 : 1500) + noteTrack + wCutoff * 1100;
   const cutoffFloor = 160 + wCutoff * 90;
 
-  // every note is a fresh, independent voice — note and envelope always retrigger.
-  // "slide" only changes how the pitch arrives: gliding in from the previous note
-  // instead of starting flat at its own frequency.
   const osc = ctx.createOscillator();
   osc.type = 'sawtooth';
   if(sliding && acidLastFreq){
@@ -806,7 +940,6 @@ function playAcid(t, stepIndex, sliding){
 
 const VOICES = { kick: playKick, snare: playSnare, hat: playHat };
 
-/* ---- scheduler (lookahead pattern, avoids setInterval drift) ---- */
 let currentStep = 0;
 let nextStepTime = 0;
 let schedulerTimer = null;
@@ -817,7 +950,7 @@ function scheduleStep(stepIndex, time){
     if(track.id === 'acid'){
       if(pattern.acid[stepIndex]){
         const prevIndex = (stepIndex - 1 + STEPS) % STEPS;
-        const sliding = !!pattern.acid[prevIndex]; // consecutive active steps slide, 303-style
+        const sliding = !!pattern.acid[prevIndex];
         playAcid(time, stepIndex, sliding);
       }
     } else if(pattern[track.id][stepIndex]){
@@ -828,8 +961,12 @@ function scheduleStep(stepIndex, time){
 }
 
 function highlightPlayhead(stepIndex){
+  // modal grid
   document.querySelectorAll('.step.playhead').forEach(el=>el.classList.remove('playhead'));
   document.querySelectorAll(`.step[data-step="${stepIndex}"]`).forEach(el=>el.classList.add('playhead'));
+  // bar mini grid
+  document.querySelectorAll('.bar-step.playhead').forEach(el=>el.classList.remove('playhead'));
+  document.querySelectorAll(`.bar-step[data-step="${stepIndex}"]`).forEach(el=>el.classList.add('playhead'));
 }
 
 function schedulerLoop(){
@@ -844,33 +981,47 @@ function schedulerLoop(){
 function startSequencer(){
   currentStep = 0;
   nextStepTime = ctx.currentTime + 0.05;
-  acidLastFreq = null; // fresh start, no slide from a previous run
+  acidLastFreq = null;
   schedulerLoop();
 }
 
 function stopSequencer(){
   if(schedulerTimer) clearTimeout(schedulerTimer);
   document.querySelectorAll('.step.playhead').forEach(el=>el.classList.remove('playhead'));
+  document.querySelectorAll('.bar-step.playhead').forEach(el=>el.classList.remove('playhead'));
 }
 
-toggleBtn.addEventListener('click', async ()=>{
-  ensureAudio();
-  if(ctx.state === 'suspended') await ctx.resume();
-
-  running = !running;
+function setPlayingState(isPlaying){
+  running = isPlaying;
   if(running){
     toggleBtn.textContent = 'Stop';
+    barPlayBtn.textContent = 'Stop';
     statusDot.classList.add('live');
+    modalDot.classList.add('live');
     statusText.textContent = 'PLAYING';
     if(droneNodes[1]) droneNodes[1].gain.linearRampToValueAtTime(0.04, ctx.currentTime + 1.2);
     startSequencer();
   } else {
     toggleBtn.textContent = 'Play';
+    barPlayBtn.textContent = 'Play';
     statusDot.classList.remove('live');
+    modalDot.classList.remove('live');
     statusText.textContent = 'STOPPED';
     if(droneNodes[1]) droneNodes[1].gain.linearRampToValueAtTime(0.0, ctx.currentTime + 0.6);
     stopSequencer();
   }
+}
+
+async function handleToggle(){
+  ensureAudio();
+  if(ctx.state === 'suspended') await ctx.resume();
+  setPlayingState(!running);
+}
+
+toggleBtn.addEventListener('click', handleToggle);
+barPlayBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  handleToggle();
 });
 
 /* ---------------- oscilloscope draw ---------------- */
@@ -881,6 +1032,7 @@ let dataArray;
 function resizeCanvas(){
   const ratio = window.devicePixelRatio || 1;
   const w = canvas.clientWidth, h = canvas.clientHeight;
+  if(w === 0 || h === 0) return;
   canvas.width = w * ratio;
   canvas.height = h * ratio;
   cctx.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -890,6 +1042,7 @@ resizeCanvas();
 
 function drawIdle(t){
   const w = canvas.clientWidth, h = canvas.clientHeight;
+  if(w === 0) return;
   cctx.clearRect(0,0,w,h);
   cctx.beginPath();
   cctx.strokeStyle = '#4A4842';
@@ -905,6 +1058,7 @@ function drawIdle(t){
 function drawLive(){
   analyser.getByteTimeDomainData(dataArray);
   const w = canvas.clientWidth, h = canvas.clientHeight;
+  if(w === 0) return;
   cctx.clearRect(0,0,w,h);
   cctx.beginPath();
   cctx.strokeStyle = '#8FFFC4';
@@ -924,6 +1078,9 @@ function drawLive(){
 }
 
 function loop(t){
+  if(synthOverlay.classList.contains('open')){
+    resizeCanvas();
+  }
   if(running && analyser){
     if(!dataArray) dataArray = new Uint8Array(analyser.fftSize);
     drawLive();
