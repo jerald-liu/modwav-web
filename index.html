@@ -629,6 +629,8 @@
     <div class="seq" id="seq"></div>
     <div class="ctrl-row">
       <button class="synth-start" id="synthToggle">Play</button>
+      <div class="ctrl"><span>DELAY</span><input type="range" id="delayAmt" min="0" max="100" value="22"></div>
+      <div class="ctrl"><span>REVERB</span><input type="range" id="reverbAmt" min="0" max="100" value="28"></div>
     </div>
     <p class="panel-hint">tap a step to program it</p>
   </div>
@@ -682,6 +684,8 @@ let masterGain = null;
 let analyser = null;
 let running = false;
 let droneNodes = [];
+let delaySend = null;
+let reverbSend = null;
 
 const STEPS = 16;
 const TEMPO_BPM = 140;
@@ -758,6 +762,28 @@ const toggleBtn = document.getElementById('synthToggle');
 const statusDot = document.getElementById('statusDot');
 const modalDot = document.getElementById('modalDot');
 const statusText = document.getElementById('statusText');
+const delayAmtEl = document.getElementById('delayAmt');
+const reverbAmtEl = document.getElementById('reverbAmt');
+
+delayAmtEl.addEventListener('input', ()=>{
+  if(delaySend) delaySend.gain.value = delayAmtEl.value / 100;
+});
+reverbAmtEl.addEventListener('input', ()=>{
+  if(reverbSend) reverbSend.gain.value = reverbAmtEl.value / 100;
+});
+
+function makeImpulseResponse(ctx, duration, decay){
+  const rate = ctx.sampleRate;
+  const length = Math.floor(rate * duration);
+  const ir = ctx.createBuffer(2, length, rate);
+  for(let ch = 0; ch < 2; ch++){
+    const data = ir.getChannelData(ch);
+    for(let i = 0; i < length; i++){
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i/length, decay);
+    }
+  }
+  return ir;
+}
 
 function ensureAudio(){
   if(ctx) return;
@@ -774,7 +800,36 @@ function ensureAudio(){
   masterGain.gain.value = 0.6;
   analyser = ctx.createAnalyser();
   analyser.fftSize = 1024;
+
+  // dry path
   masterGain.connect(analyser);
+
+  // delay send bus — dotted-eighth feedback delay
+  delaySend = ctx.createGain();
+  delaySend.gain.value = delayAmtEl.value / 100;
+  const delayNode = ctx.createDelay(2.0);
+  delayNode.delayTime.value = STEP_SECONDS * 3;
+  const delayFb = ctx.createGain();
+  delayFb.gain.value = 0.42;
+  const delayDamp = ctx.createBiquadFilter();
+  delayDamp.type = 'lowpass';
+  delayDamp.frequency.value = 3200;
+  masterGain.connect(delaySend);
+  delaySend.connect(delayNode);
+  delayNode.connect(delayDamp);
+  delayDamp.connect(delayFb);
+  delayFb.connect(delayNode);
+  delayDamp.connect(analyser);
+
+  // reverb send bus — algorithmic impulse response
+  reverbSend = ctx.createGain();
+  reverbSend.gain.value = reverbAmtEl.value / 100;
+  const reverb = ctx.createConvolver();
+  reverb.buffer = makeImpulseResponse(ctx, 2.6, 2.8);
+  masterGain.connect(reverbSend);
+  reverbSend.connect(reverb);
+  reverb.connect(analyser);
+
   analyser.connect(ctx.destination);
 
   const drone = ctx.createOscillator();
