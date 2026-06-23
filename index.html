@@ -494,7 +494,8 @@
   }
   .seq-toolbar .unmute-all-btn{ justify-self: end; margin-right: 26px; }
   @media (max-width: 720px){
-    .seq-toolbar{ grid-template-columns: 1fr; justify-items: end; }
+    .seq-toolbar{ grid-template-columns: 1fr; justify-items: start; }
+    .seq-toolbar .unmute-all-btn{ justify-self: start; margin-right: 0; margin-left: 58px; }
   }
   .unmute-all-btn{
     font-family: 'JetBrains Mono', monospace;
@@ -538,6 +539,7 @@
   @media (max-width: 720px){
     .seq{ grid-template-columns: 1fr; gap: 0.2rem; }
     .seq-label{ margin-top: 0.6rem; }
+    .seq-label .track-ctrl{ margin-left: 0.6rem; }
     .send-knobs{ margin: 0.2rem 0 0.6rem; }
   }
 
