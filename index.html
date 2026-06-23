@@ -882,6 +882,7 @@ const fmIndexVal = document.getElementById('fmIndexVal');
 let fmPopupStepIdx = -1;
 
 function openFMPopup(stepIdx, anchorEl){
+  if(acidInstrument !== 'fm') return;
   fmPopupStepIdx = stepIdx;
   fmPopupStep.textContent = stepIdx + 1;
   fmRatioInput.value = FM_RATIO[stepIdx];
@@ -1015,6 +1016,7 @@ function setAcidInstrument(name){
   acidInstrument = name;
   if(instButtons.acid) instButtons.acid.classList.toggle('active', name === 'acid');
   if(instButtons.fm) instButtons.fm.classList.toggle('active', name === 'fm');
+  if(name !== 'fm' && typeof closeFMPopup === 'function') closeFMPopup();
 }
 
 TRACKS.forEach((track, ti)=>{
