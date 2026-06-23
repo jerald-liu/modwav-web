@@ -668,6 +668,10 @@ synthOverlay.addEventListener('click', (e)=>{
 });
 document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape') closeModal();
+  if(e.code === 'Space' && !['INPUT','TEXTAREA'].includes(e.target.tagName)){
+    e.preventDefault();
+    handleToggle();
+  }
 });
 
 /* ---------------- step sequencer ---------------- */
