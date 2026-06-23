@@ -1674,22 +1674,25 @@ function drawIdleTo(ctx2d, c, t, ampScale){
   ctx2d.stroke();
 }
 
-function drawLiveTo(ctx2d, c, glow){
+function drawLiveTo(ctx2d, c, glow, ampScale){
   const w = c.clientWidth, h = c.clientHeight;
   if(w === 0) return;
   ctx2d.clearRect(0,0,w,h);
   ctx2d.beginPath();
   ctx2d.strokeStyle = '#8FFFC4';
-  ctx2d.lineWidth = 1.4;
+  ctx2d.lineWidth = glow ? 1.4 : 1.6;
   if(glow){
     ctx2d.shadowColor = 'rgba(143,255,196,0.45)';
     ctx2d.shadowBlur = 4;
   }
+  const center = h / 2;
+  const halfH = h / 2;
+  const amp = ampScale || 1;
   const sliceWidth = w / dataArray.length;
   let x = 0;
   for(let i=0; i<dataArray.length; i++){
-    const v = dataArray[i] / 128.0;
-    const y = (v * h) / 2;
+    const v = dataArray[i] / 128.0; // 0..2, silence = 1
+    const y = center + (v - 1) * halfH * amp;
     if(i===0) ctx2d.moveTo(x,y); else ctx2d.lineTo(x,y);
     x += sliceWidth;
   }
@@ -1704,11 +1707,11 @@ function loop(t){
   resizeOne(bgCanvas);
   if(running && analyser){
     if(!dataArray) dataArray = new Uint8Array(analyser.fftSize);
-    drawLiveTo(cctx, canvas, true);
-    drawLiveTo(bgCtx, bgCanvas, false);
+    drawLiveTo(cctx, canvas, true, 1);
+    // amplify bg waveform deviation so the live signal is readable at the larger size
+    drawLiveTo(bgCtx, bgCanvas, false, 4);
   } else {
     drawIdleTo(cctx, canvas, t, 1);
-    // background idle wave: bigger amplitude scaled to its height
     drawIdleTo(bgCtx, bgCanvas, t, Math.max(1, bgCanvas.clientHeight / 86));
   }
   requestAnimationFrame(loop);
