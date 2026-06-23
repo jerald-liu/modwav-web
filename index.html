@@ -327,13 +327,52 @@
 
   .seq{
     display: grid;
-    grid-template-columns: 64px 1fr;
+    grid-template-columns: 64px 1fr 84px;
     gap: 0.45rem 0.6rem;
     margin-bottom: 1.1rem;
   }
   @media (max-width: 560px){
     .seq{ grid-template-columns: 1fr; gap: 0.2rem; }
     .seq-label{ margin-top: 0.5rem; }
+    .send-knobs{ margin: 0.2rem 0 0.6rem; }
+  }
+
+  .send-knobs{
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+  .send-knob-wrap{
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.6rem;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+  }
+  .send-knob{
+    -webkit-appearance: none;
+    width: 32px;
+    height: 2px;
+    background: var(--line);
+    outline: none;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  .send-knob::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--phosphor);
+    cursor: pointer;
+    border: none;
+  }
+  .send-knob::-moz-range-thumb{
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--phosphor);
+    cursor: pointer;
+    border: none;
   }
   .seq-label{
     font-family: 'JetBrains Mono', monospace;
@@ -684,8 +723,20 @@ let masterGain = null;
 let analyser = null;
 let running = false;
 let droneNodes = [];
-let delaySend = null;
-let reverbSend = null;
+let delayReturn = null;
+let reverbReturn = null;
+let delayBusInput = null;
+let reverbBusInput = null;
+const trackGains = {};
+const trackDelaySends = {};
+const trackReverbSends = {};
+
+const TRACK_SEND_DEFAULTS = {
+  kick:  { delay: 0,  reverb: 8  },
+  snare: { delay: 10, reverb: 22 },
+  hat:   { delay: 6,  reverb: 30 },
+  acid:  { delay: 30, reverb: 16 },
+};
 
 const STEPS = 16;
 const TEMPO_BPM = 140;
@@ -756,7 +807,40 @@ TRACKS.forEach((track, ti)=>{
     row.appendChild(btn);
   }
   seqEl.appendChild(row);
+
+  const sends = document.createElement('div');
+  sends.className = 'send-knobs';
+  const defaults = TRACK_SEND_DEFAULTS[track.id];
+  const delayKnob = document.createElement('input');
+  delayKnob.type = 'range'; delayKnob.min = 0; delayKnob.max = 100;
+  delayKnob.value = defaults.delay;
+  delayKnob.className = 'send-knob';
+  delayKnob.title = `${track.label} → delay send`;
+  delayKnob.addEventListener('input', ()=>{
+    if(trackDelaySends[track.id]) trackDelaySends[track.id].gain.value = delayKnob.value / 100;
+  });
+  const reverbKnob = document.createElement('input');
+  reverbKnob.type = 'range'; reverbKnob.min = 0; reverbKnob.max = 100;
+  reverbKnob.value = defaults.reverb;
+  reverbKnob.className = 'send-knob';
+  reverbKnob.title = `${track.label} → reverb send`;
+  reverbKnob.addEventListener('input', ()=>{
+    if(trackReverbSends[track.id]) trackReverbSends[track.id].gain.value = reverbKnob.value / 100;
+  });
+  sends.appendChild(labelTag('D', delayKnob));
+  sends.appendChild(labelTag('R', reverbKnob));
+  seqEl.appendChild(sends);
 });
+
+function labelTag(text, input){
+  const wrap = document.createElement('label');
+  wrap.className = 'send-knob-wrap mono';
+  const tag = document.createElement('span');
+  tag.textContent = text;
+  wrap.appendChild(tag);
+  wrap.appendChild(input);
+  return wrap;
+}
 
 const toggleBtn = document.getElementById('synthToggle');
 const statusDot = document.getElementById('statusDot');
@@ -766,10 +850,10 @@ const delayAmtEl = document.getElementById('delayAmt');
 const reverbAmtEl = document.getElementById('reverbAmt');
 
 delayAmtEl.addEventListener('input', ()=>{
-  if(delaySend) delaySend.gain.value = delayAmtEl.value / 100;
+  if(delayReturn) delayReturn.gain.value = delayAmtEl.value / 100;
 });
 reverbAmtEl.addEventListener('input', ()=>{
-  if(reverbSend) reverbSend.gain.value = reverbAmtEl.value / 100;
+  if(reverbReturn) reverbReturn.gain.value = reverbAmtEl.value / 100;
 });
 
 function makeImpulseResponse(ctx, duration, decay){
@@ -804,9 +888,9 @@ function ensureAudio(){
   // dry path
   masterGain.connect(analyser);
 
-  // delay send bus — dotted-eighth feedback delay
-  delaySend = ctx.createGain();
-  delaySend.gain.value = delayAmtEl.value / 100;
+  // delay bus — dotted-eighth feedback delay. delayBusInput sums each track's send.
+  delayBusInput = ctx.createGain();
+  delayBusInput.gain.value = 1;
   const delayNode = ctx.createDelay(2.0);
   delayNode.delayTime.value = STEP_SECONDS * 3;
   const delayFb = ctx.createGain();
@@ -814,23 +898,48 @@ function ensureAudio(){
   const delayDamp = ctx.createBiquadFilter();
   delayDamp.type = 'lowpass';
   delayDamp.frequency.value = 3200;
-  masterGain.connect(delaySend);
-  delaySend.connect(delayNode);
+  delayReturn = ctx.createGain();
+  delayReturn.gain.value = delayAmtEl.value / 100;
+  delayBusInput.connect(delayNode);
   delayNode.connect(delayDamp);
   delayDamp.connect(delayFb);
   delayFb.connect(delayNode);
-  delayDamp.connect(analyser);
+  delayDamp.connect(delayReturn);
+  delayReturn.connect(analyser);
 
-  // reverb send bus — algorithmic impulse response
-  reverbSend = ctx.createGain();
-  reverbSend.gain.value = reverbAmtEl.value / 100;
+  // reverb bus — algorithmic impulse response. reverbBusInput sums each track's send.
+  reverbBusInput = ctx.createGain();
+  reverbBusInput.gain.value = 1;
   const reverb = ctx.createConvolver();
   reverb.buffer = makeImpulseResponse(ctx, 2.6, 2.8);
-  masterGain.connect(reverbSend);
-  reverbSend.connect(reverb);
-  reverb.connect(analyser);
+  reverbReturn = ctx.createGain();
+  reverbReturn.gain.value = reverbAmtEl.value / 100;
+  reverbBusInput.connect(reverb);
+  reverb.connect(reverbReturn);
+  reverbReturn.connect(analyser);
 
   analyser.connect(ctx.destination);
+
+  // per-track output gain + sends into the shared delay/reverb buses
+  TRACKS.forEach(track=>{
+    const g = ctx.createGain();
+    g.gain.value = 1;
+    g.connect(masterGain);
+    trackGains[track.id] = g;
+
+    const defaults = TRACK_SEND_DEFAULTS[track.id];
+    const ds = ctx.createGain();
+    ds.gain.value = defaults.delay / 100;
+    g.connect(ds);
+    ds.connect(delayBusInput);
+    trackDelaySends[track.id] = ds;
+
+    const rs = ctx.createGain();
+    rs.gain.value = defaults.reverb / 100;
+    g.connect(rs);
+    rs.connect(reverbBusInput);
+    trackReverbSends[track.id] = rs;
+  });
 
   const drone = ctx.createOscillator();
   drone.type = 'sine';
@@ -843,7 +952,7 @@ function ensureAudio(){
   droneNodes = [drone, droneGain];
 }
 
-function playKick(t){
+function playKick(t, dest){
   const osc = ctx.createOscillator();
   osc.type = 'triangle';
   osc.frequency.setValueAtTime(38.7, t);
@@ -869,15 +978,15 @@ function playKick(t){
 
   osc.connect(shaper);
   shaper.connect(ampEnv);
-  ampEnv.connect(masterGain);
+  ampEnv.connect(dest);
   click.connect(clickEnv);
-  clickEnv.connect(masterGain);
+  clickEnv.connect(dest);
 
   osc.start(t); osc.stop(t + 0.58);
   click.start(t); click.stop(t + 0.01);
 }
 
-function playSnare(t){
+function playSnare(t, dest){
   const osc1 = ctx.createOscillator();
   osc1.type = 'triangle';
   osc1.frequency.value = 190;
@@ -891,7 +1000,7 @@ function playSnare(t){
 
   osc1.connect(bodyEnv);
   osc2.connect(bodyEnv);
-  bodyEnv.connect(masterGain);
+  bodyEnv.connect(dest);
   osc1.start(t); osc1.stop(t + 0.14);
   osc2.start(t); osc2.stop(t + 0.14);
 
@@ -918,12 +1027,12 @@ function playSnare(t){
   noise.connect(highpass);
   highpass.connect(bandpass);
   bandpass.connect(noiseEnv);
-  noiseEnv.connect(masterGain);
+  noiseEnv.connect(dest);
   noise.start(t);
   noise.stop(t + 0.18);
 }
 
-function playHat(t){
+function playHat(t, dest){
   const ratios = [1, 1.342, 1.787, 2.0, 2.245, 2.6];
   const fundamental = 245;
   const hatGain = ctx.createGain();
@@ -947,7 +1056,7 @@ function playHat(t){
 
   hatGain.connect(highpass);
   highpass.connect(env);
-  env.connect(masterGain);
+  env.connect(dest);
 }
 
 let acidLastFreq = null;
@@ -959,7 +1068,7 @@ function stepWobble(stepIndex, salt){
   return x - Math.floor(x);
 }
 
-function playAcid(t, stepIndex, sliding){
+function playAcid(t, stepIndex, sliding, dest){
   const note = ACID_NOTES[stepIndex % ACID_NOTES.length];
   const freq = midiToFreq(note);
   const accented = !!ACID_ACCENT[stepIndex % ACID_ACCENT.length];
@@ -997,7 +1106,7 @@ function playAcid(t, stepIndex, sliding){
 
   osc.connect(filter);
   filter.connect(gain);
-  gain.connect(masterGain);
+  gain.connect(dest);
   osc.start(t);
   osc.stop(t + STEP_SECONDS * 2.5);
 
@@ -1013,14 +1122,15 @@ const SCHEDULE_AHEAD = 0.12;
 
 function scheduleStep(stepIndex, time){
   TRACKS.forEach(track=>{
+    const dest = trackGains[track.id];
     if(track.id === 'acid'){
       if(pattern.acid[stepIndex]){
         const prevIndex = (stepIndex - 1 + STEPS) % STEPS;
         const sliding = !!pattern.acid[prevIndex];
-        playAcid(time, stepIndex, sliding);
+        playAcid(time, stepIndex, sliding, dest);
       }
     } else if(pattern[track.id][stepIndex]){
-      VOICES[track.id](time);
+      VOICES[track.id](time, dest);
     }
   });
   highlightPlayhead(stepIndex);
