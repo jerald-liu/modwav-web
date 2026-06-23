@@ -486,6 +486,30 @@
     gap: 4px;
     margin-left: auto;
   }
+  .seq-toolbar{
+    display: grid;
+    grid-template-columns: 116px 1fr 84px;
+    gap: 0.45rem 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+  .seq-toolbar .unmute-all-btn{ justify-self: end; }
+  @media (max-width: 720px){
+    .seq-toolbar{ grid-template-columns: 1fr; justify-items: end; }
+  }
+  .unmute-all-btn{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 6px;
+    background: transparent;
+    color: #c54a3a;
+    border: 1px solid #c54a3a;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .unmute-all-btn:hover{ background: #c54a3a; color: #0E0E0D; }
   .track-ctrl-btn{
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem;
@@ -1036,6 +1060,9 @@
       <span class="status"><span class="dot" id="modalDot"></span><span id="statusText">STOPPED</span></span>
     </div>
     <canvas id="scope" width="600" height="86"></canvas>
+    <div class="seq-toolbar">
+      <button type="button" class="unmute-all-btn" id="unmuteAllBtn" title="unmute every muted track (solos unaffected)">Unmute All</button>
+    </div>
     <div class="seq" id="seq"></div>
     <div class="ctrl-row">
       <button class="synth-start" id="synthToggle">Play</button>
@@ -1241,11 +1268,21 @@ TRACKS.forEach(t => pattern[t.id] = DEFAULT_PATTERN[t.id].slice());
 
 const trackMute = {};
 const trackSolo = {};
+const muteButtons = {};
 TRACKS.forEach(t => { trackMute[t.id] = false; trackSolo[t.id] = false; });
+function unmuteAll(){
+  TRACKS.forEach(t => {
+    if(trackMute[t.id]){
+      trackMute[t.id] = false;
+      muteButtons[t.id]?.classList.remove('active');
+    }
+  });
+}
+document.getElementById('unmuteAllBtn').addEventListener('click', unmuteAll);
 function trackAudible(id){
-  if(trackMute[id]) return false;
   const anySolo = TRACKS.some(t => trackSolo[t.id]);
-  return !anySolo || trackSolo[id];
+  if(anySolo) return trackSolo[id]; // solo overrides mute on the soloed track
+  return !trackMute[id];
 }
 
 /* ---- build mini bar sequencer ---- */
@@ -1306,6 +1343,7 @@ TRACKS.forEach((track, ti)=>{
     trackMute[track.id] = !trackMute[track.id];
     muteBtn.classList.toggle('active', trackMute[track.id]);
   });
+  muteButtons[track.id] = muteBtn;
   const soloBtn = document.createElement('button');
   soloBtn.type = 'button';
   soloBtn.className = 'track-ctrl-btn solo';
