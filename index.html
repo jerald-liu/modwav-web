@@ -762,6 +762,14 @@ const statusText = document.getElementById('statusText');
 function ensureAudio(){
   if(ctx) return;
   ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+  // iOS Web Audio unlock: play a silent buffer synchronously inside the user gesture
+  const unlockBuf = ctx.createBuffer(1, 1, 22050);
+  const unlockSrc = ctx.createBufferSource();
+  unlockSrc.buffer = unlockBuf;
+  unlockSrc.connect(ctx.destination);
+  unlockSrc.start(0);
+
   masterGain = ctx.createGain();
   masterGain.gain.value = 0.6;
   analyser = ctx.createAnalyser();
