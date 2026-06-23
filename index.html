@@ -498,10 +498,14 @@
   }
   .unmute-all-btn{
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.55rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 3px 6px;
+    font-size: 0.95rem;
+    line-height: 1;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: transparent;
     color: #c54a3a;
     border: 1px solid #c54a3a;
@@ -1061,7 +1065,7 @@
     </div>
     <canvas id="scope" width="600" height="86"></canvas>
     <div class="seq-toolbar">
-      <button type="button" class="unmute-all-btn" id="unmuteAllBtn" title="unmute every muted track (solos unaffected)">Unmute All</button>
+      <button type="button" class="unmute-all-btn" id="unmuteAllBtn" title="unmute every muted track (solos unaffected)" aria-label="unmute all">⟲</button>
     </div>
     <div class="seq" id="seq"></div>
     <div class="ctrl-row">
