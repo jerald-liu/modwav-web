@@ -1824,8 +1824,9 @@ function scheduleStep(stepIndex, time){
     if(track.id === 'acid'){
       if(pattern.acid[stepIndex]){
         const prevIndex = (stepIndex - 1 + STEPS) % STEPS;
-        const sliding = !!pattern.acid[prevIndex];
-        const voice = acidInstrument === 'fm' ? playFM : playAcid;
+        const isFM = acidInstrument === 'fm';
+        const sliding = !isFM && !!pattern.acid[prevIndex];
+        const voice = isFM ? playFM : playAcid;
         voice(ctx, time, stepIndex, sliding, dest);
       }
     } else if(pattern[track.id][stepIndex]){
@@ -2044,8 +2045,9 @@ async function renderLoop(trackIds){
       if(id === 'acid'){
         if(pattern.acid[sIdx]){
           const prev = (sIdx - 1 + STEPS) % STEPS;
-          const sliding = !!pattern.acid[prev];
-          const voice = acidInstrument === 'fm' ? playFM : playAcid;
+          const isFM = acidInstrument === 'fm';
+          const sliding = !isFM && !!pattern.acid[prev];
+          const voice = isFM ? playFM : playAcid;
           voice(octx, t, sIdx, sliding, gains.acid);
         }
       } else if(pattern[id][sIdx]){
