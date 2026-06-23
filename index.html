@@ -477,9 +477,35 @@
 
   .seq{
     display: grid;
-    grid-template-columns: 64px 1fr 84px;
+    grid-template-columns: 116px 1fr 84px;
     gap: 0.45rem 0.6rem;
     margin-bottom: 1.1rem;
+  }
+  .track-ctrl{
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+  }
+  .track-ctrl-btn{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-dim);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .track-ctrl-btn:hover{ border-color: var(--ink-dim); color: var(--ink); }
+  .track-ctrl-btn.mute.active{
+    background: #c54a3a; border-color: #c54a3a; color: #0E0E0D;
+  }
+  .track-ctrl-btn.solo.active{
+    background: var(--phosphor); border-color: var(--phosphor); color: #0E0E0D;
   }
   @media (max-width: 720px){
     .seq{ grid-template-columns: 1fr; gap: 0.2rem; }
@@ -1213,6 +1239,15 @@ function noteName(m){ return NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 
 const pattern = {};
 TRACKS.forEach(t => pattern[t.id] = DEFAULT_PATTERN[t.id].slice());
 
+const trackMute = {};
+const trackSolo = {};
+TRACKS.forEach(t => { trackMute[t.id] = false; trackSolo[t.id] = false; });
+function trackAudible(id){
+  if(trackMute[id]) return false;
+  const anySolo = TRACKS.some(t => trackSolo[t.id]);
+  return !anySolo || trackSolo[id];
+}
+
 /* ---- build mini bar sequencer ---- */
 const barSeqEl = document.getElementById('barSeq');
 TRACKS.forEach((track, ti)=>{
@@ -1256,8 +1291,32 @@ TRACKS.forEach((track, ti)=>{
     toggle.append(a, f);
     label.append(toggle);
   } else {
-    label.textContent = track.label;
+    const text = document.createElement('span');
+    text.textContent = track.label;
+    label.appendChild(text);
   }
+  const ctrl = document.createElement('div');
+  ctrl.className = 'track-ctrl';
+  const muteBtn = document.createElement('button');
+  muteBtn.type = 'button';
+  muteBtn.className = 'track-ctrl-btn mute';
+  muteBtn.textContent = 'M';
+  muteBtn.title = `mute ${track.label}`;
+  muteBtn.addEventListener('click', ()=>{
+    trackMute[track.id] = !trackMute[track.id];
+    muteBtn.classList.toggle('active', trackMute[track.id]);
+  });
+  const soloBtn = document.createElement('button');
+  soloBtn.type = 'button';
+  soloBtn.className = 'track-ctrl-btn solo';
+  soloBtn.textContent = 'S';
+  soloBtn.title = `solo ${track.label}`;
+  soloBtn.addEventListener('click', ()=>{
+    trackSolo[track.id] = !trackSolo[track.id];
+    soloBtn.classList.toggle('active', trackSolo[track.id]);
+  });
+  ctrl.append(muteBtn, soloBtn);
+  label.appendChild(ctrl);
   seqEl.appendChild(label);
 
   const row = document.createElement('div');
@@ -1760,6 +1819,7 @@ const SCHEDULE_AHEAD = 0.12;
 
 function scheduleStep(stepIndex, time){
   TRACKS.forEach(track=>{
+    if(!trackAudible(track.id)) return;
     const dest = trackGains[track.id];
     if(track.id === 'acid'){
       if(pattern.acid[stepIndex]){
@@ -2221,7 +2281,8 @@ async function runExport(){
     }
     exportStatus.textContent = `rendering mix (${total}/${total})…`;
     await nextFrame();
-    const mixBuf = await renderLoop(stemTracks);
+    const mixTracks = stemTracks.filter(trackAudible);
+    const mixBuf = await renderLoop(mixTracks.length ? mixTracks : stemTracks);
     files.push({ name:'mix.wav', data: audioBufferToWav(mixBuf) });
     files.push({ name:'pattern.mid', data: buildMidi() });
     files.push({ name:'README.txt', data: exportReadme() });
