@@ -42,9 +42,32 @@
   /* ---------- layout shells ---------- */
   section{
     position: relative;
-    padding: 7rem 1.5rem;
-    max-width: 760px;
+    padding: 7rem 2rem;
+    max-width: 1040px;
     margin: 0 auto;
+  }
+  /* sections with a side kicker get a 2-column editorial grid */
+  section.has-rail{
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+  section.has-rail .kicker{
+    margin: 0;
+    padding-top: 0.5rem;
+    border-left: 1px solid var(--line);
+    padding-left: 1rem;
+  }
+  section.has-rail .section-body{ max-width: 640px; }
+  @media (max-width: 800px){
+    section{ padding: 5rem 1.5rem; max-width: 720px; }
+    section.has-rail{ display: block; }
+    section.has-rail .kicker{
+      border-left: none; padding-left: 0; padding-top: 0;
+      margin: 0 0 0.9rem;
+    }
+    section.has-rail .section-body{ max-width: none; }
   }
   @media (max-width: 600px){
     section{ padding: 4.5rem 1.25rem; }
@@ -55,7 +78,10 @@
     border-top: 1px solid var(--line);
     position: relative;
     margin: 0 auto;
-    max-width: 760px;
+    max-width: 1040px;
+  }
+  @media (max-width: 800px){
+    .rule{ max-width: 720px; }
   }
   .rule::before, .rule::after{
     content: "";
@@ -691,10 +717,13 @@
   }
 
   footer{
-    padding: 5rem 1.5rem 4rem;
-    max-width: 760px;
+    padding: 5rem 2rem 4rem;
+    max-width: 1040px;
     margin: 0 auto;
     text-align: left;
+  }
+  @media (max-width: 800px){
+    footer{ padding: 5rem 1.5rem 4rem; max-width: 720px; }
   }
   footer .big{
     font-size: clamp(1.8rem, 6vw, 2.6rem);
@@ -766,47 +795,53 @@
 <hr class="rule">
 
 <!-- ================= CONCEPT ================= -->
-<section class="reveal">
-  <p class="kicker">The concept</p>
-  <h2>Everything past CDJs and a 4-track mixer.</h2>
-  <p class="lede">The Bay Area has a real synth/modular/DIY scene — builder Discords, meetups, a steady stream of Eurorack and circuit-bending work — but no regular room for it.</p>
-  <p>Mod.wav is that room. Booked live sets, bring-your-rig slots, and open plug-and-play stations. A space to build, share, and play sound together.</p>
+<section class="reveal has-rail">
+  <p class="kicker mono">01 — The concept</p>
+  <div class="section-body">
+    <h2>Everything past CDJs and a 4-track mixer.</h2>
+    <p class="lede">The Bay Area has a real synth/modular/DIY scene — builder Discords, meetups, a steady stream of Eurorack and circuit-bending work — but no regular room for it.</p>
+    <p>Mod.wav is that room. Booked live sets, bring-your-rig slots, and open plug-and-play stations. A space to build, share, and play sound together.</p>
+  </div>
 </section>
 
 <hr class="rule">
 
 <!-- ================= FORMAT ================= -->
-<section class="reveal">
-  <p class="kicker">Format</p>
-  <h2>Low-stakes by design.</h2>
-  <dl class="spec-grid">
-    <dt>What</dt>
-    <dd>Live hardware sets + open stations</dd>
-    <dt>Where</dt>
-    <dd>San Francisco</dd>
-    <dt>Cost</dt>
-    <dd>Free</dd>
-    <dt>Crew</dt>
-    <dd>Volunteer-run</dd>
-    <dt>Audience</dt>
-    <dd>Builders, synth heads, the curious</dd>
-  </dl>
-  <div class="crumbs">
-    <span class="crumb mono">Eurorack</span>
-    <span class="crumb mono">MIDI</span>
-    <span class="crumb mono">DIY builds</span>
-    <span class="crumb mono">circuit-bent</span>
-    <span class="crumb mono">generative</span>
+<section class="reveal has-rail">
+  <p class="kicker mono">02 — Format</p>
+  <div class="section-body">
+    <h2>Low-stakes by design.</h2>
+    <dl class="spec-grid">
+      <dt>What</dt>
+      <dd>Live hardware sets + open stations</dd>
+      <dt>Where</dt>
+      <dd>San Francisco</dd>
+      <dt>Cost</dt>
+      <dd>Free</dd>
+      <dt>Crew</dt>
+      <dd>Volunteer-run</dd>
+      <dt>Audience</dt>
+      <dd>Builders, synth heads, the curious</dd>
+    </dl>
+    <div class="crumbs">
+      <span class="crumb mono">Eurorack</span>
+      <span class="crumb mono">MIDI</span>
+      <span class="crumb mono">DIY builds</span>
+      <span class="crumb mono">circuit-bent</span>
+      <span class="crumb mono">generative</span>
+    </div>
   </div>
 </section>
 
 <hr class="rule">
 
 <!-- ================= ARTIFACT ================= -->
-<section class="reveal">
-  <p class="kicker">In the room</p>
-  <h2>Sound, made together.</h2>
-  <p>Patches passed across tables, rigs plugged into each other, ideas swapped in real time. The point isn't a polished set — it's what comes out when builders and players share a room.</p>
+<section class="reveal has-rail">
+  <p class="kicker mono">03 — In the room</p>
+  <div class="section-body">
+    <h2>Sound, made together.</h2>
+    <p>Patches passed across tables, rigs plugged into each other, ideas swapped in real time. The point isn't a polished set — it's what comes out when builders and players share a room.</p>
+  </div>
 </section>
 
 <hr class="rule">
