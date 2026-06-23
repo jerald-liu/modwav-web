@@ -686,6 +686,7 @@
     <div class="seq" id="seq"></div>
     <div class="ctrl-row">
       <button class="synth-start" id="synthToggle">Play</button>
+      <div class="ctrl"><span>BPM <b id="bpmVal">140</b></span><input type="range" id="bpmAmt" min="60" max="180" value="140"></div>
       <div class="ctrl"><span>DELAY</span><input type="range" id="delayAmt" min="0" max="100" value="22"></div>
       <div class="ctrl"><span>REVERB</span><input type="range" id="reverbAmt" min="0" max="100" value="28"></div>
     </div>
@@ -757,8 +758,9 @@ const TRACK_SEND_DEFAULTS = {
 };
 
 const STEPS = 16;
-const TEMPO_BPM = 140;
-const STEP_SECONDS = 60 / TEMPO_BPM / 4;
+let TEMPO_BPM = 140;
+let STEP_SECONDS = 60 / TEMPO_BPM / 4;
+let delayNodeRef = null;
 
 const TRACKS = [
   { id:'kick',  label:'KICK'  },
@@ -910,12 +912,22 @@ const modalDot = document.getElementById('modalDot');
 const statusText = document.getElementById('statusText');
 const delayAmtEl = document.getElementById('delayAmt');
 const reverbAmtEl = document.getElementById('reverbAmt');
+const bpmAmtEl = document.getElementById('bpmAmt');
+const bpmValEl = document.getElementById('bpmVal');
 
 delayAmtEl.addEventListener('input', ()=>{
   if(delayReturn) delayReturn.gain.value = delayAmtEl.value / 100;
 });
 reverbAmtEl.addEventListener('input', ()=>{
   if(reverbReturn) reverbReturn.gain.value = reverbAmtEl.value / 100;
+});
+bpmAmtEl.addEventListener('input', ()=>{
+  TEMPO_BPM = +bpmAmtEl.value;
+  STEP_SECONDS = 60 / TEMPO_BPM / 4;
+  bpmValEl.textContent = TEMPO_BPM;
+  if(delayNodeRef && ctx){
+    delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * 3, ctx.currentTime, 0.03);
+  }
 });
 
 function makeImpulseResponse(ctx, duration, decay){
@@ -955,6 +967,7 @@ function ensureAudio(){
   delayBusInput.gain.value = 1;
   const delayNode = ctx.createDelay(2.0);
   delayNode.delayTime.value = STEP_SECONDS * 3;
+  delayNodeRef = delayNode;
   const delayFb = ctx.createGain();
   delayFb.gain.value = 0.42;
   const delayDamp = ctx.createBiquadFilter();
