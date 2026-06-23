@@ -456,6 +456,91 @@
   .tempo-input::-webkit-inner-spin-button{ -webkit-appearance: none; margin: 0; }
   .tempo-input[type=number]{ -moz-appearance: textfield; }
 
+  /* instrument toggle (ACID/FM) */
+  .inst-toggle{
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .inst-btn{
+    background: none;
+    border: none;
+    color: var(--ink-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+    padding: 0.18rem 0.36rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .inst-btn + .inst-btn{ border-left: 1px solid var(--line); }
+  .inst-btn:hover{ color: var(--ink); }
+  .inst-btn.active{ background: var(--ink); color: #0E0E0D; }
+
+  /* per-step FM params popup */
+  .fm-popup{
+    position: absolute;
+    z-index: 250;
+    background: #0E0E0D;
+    border: 1px solid var(--phosphor);
+    border-radius: 4px;
+    padding: 0.6rem 0.8rem;
+    min-width: 220px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  }
+  .fm-popup[hidden]{ display: none; }
+  .fm-popup-head{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    color: var(--phosphor);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+  }
+  .fm-popup-close{
+    background: none;
+    border: none;
+    color: var(--ink-dim);
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  .fm-popup-close:hover{ color: var(--ink); }
+  .fm-popup-row{
+    display: grid;
+    grid-template-columns: 50px 1fr 40px;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6rem;
+    color: var(--ink-dim);
+    padding: 0.2rem 0;
+  }
+  .fm-popup-row b{ color: var(--ink); font-weight: 500; text-align: right; }
+  .fm-popup-row input[type=range]{
+    -webkit-appearance: none;
+    background: var(--line);
+    height: 2px;
+    outline: none;
+    border-radius: 2px;
+  }
+  .fm-popup-row input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--phosphor);
+    cursor: pointer; border: none;
+  }
+  .fm-popup-row input[type=range]::-moz-range-thumb{
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--phosphor);
+    cursor: pointer; border: none;
+  }
+
   /* acid pitch steps: drag up/down to retune */
   .step-pitch{
     touch-action: none;
@@ -733,7 +818,23 @@
       <div class="ctrl"><span>DELAY</span><input type="range" id="delayAmt" min="0" max="100" value="22"></div>
       <div class="ctrl"><span>REVERB</span><input type="range" id="reverbAmt" min="0" max="100" value="28"></div>
     </div>
-    <p class="panel-hint">tap a step to program it</p>
+    <p class="panel-hint">tap to toggle · drag up/down on acid for pitch · long-press / right-click for FM params</p>
+    <div class="fm-popup" id="fmPopup" hidden>
+      <div class="fm-popup-head mono">
+        <span>STEP <b id="fmPopupStep">1</b> · FM</span>
+        <button class="fm-popup-close" id="fmPopupClose" type="button">✕</button>
+      </div>
+      <div class="fm-popup-row mono">
+        <span>RATIO</span>
+        <input type="range" id="fmRatioInput" min="0.25" max="8" step="0.25" value="2">
+        <b id="fmRatioVal">2.00</b>
+      </div>
+      <div class="fm-popup-row mono">
+        <span>INDEX</span>
+        <input type="range" id="fmIndexInput" min="0" max="400" step="5" value="120">
+        <b id="fmIndexVal">120</b>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -769,6 +870,61 @@ synthClose.addEventListener('click', closeModal);
 synthOverlay.addEventListener('click', (e)=>{
   if(e.target === synthOverlay) closeModal();
 });
+
+/* ---------------- FM per-step popup ---------------- */
+const fmPopup = document.getElementById('fmPopup');
+const fmPopupStep = document.getElementById('fmPopupStep');
+const fmPopupClose = document.getElementById('fmPopupClose');
+const fmRatioInput = document.getElementById('fmRatioInput');
+const fmIndexInput = document.getElementById('fmIndexInput');
+const fmRatioVal = document.getElementById('fmRatioVal');
+const fmIndexVal = document.getElementById('fmIndexVal');
+let fmPopupStepIdx = -1;
+
+function openFMPopup(stepIdx, anchorEl){
+  fmPopupStepIdx = stepIdx;
+  fmPopupStep.textContent = stepIdx + 1;
+  fmRatioInput.value = FM_RATIO[stepIdx];
+  fmIndexInput.value = FM_INDEX[stepIdx];
+  fmRatioVal.textContent = (+FM_RATIO[stepIdx]).toFixed(2);
+  fmIndexVal.textContent = FM_INDEX[stepIdx];
+  fmPopup.hidden = false;
+  // position above the step, relative to the modal
+  const modal = anchorEl.closest('.synth-modal');
+  const stepR = anchorEl.getBoundingClientRect();
+  const modalR = modal.getBoundingClientRect();
+  const popR = fmPopup.getBoundingClientRect();
+  let left = (stepR.left + stepR.width/2) - modalR.left - popR.width/2;
+  let top = stepR.top - modalR.top - popR.height - 8;
+  if(top < 4){ top = stepR.bottom - modalR.top + 8; }
+  left = Math.max(8, Math.min(modalR.width - popR.width - 8, left));
+  fmPopup.style.left = left + 'px';
+  fmPopup.style.top = top + 'px';
+}
+function closeFMPopup(){
+  fmPopup.hidden = true;
+  fmPopupStepIdx = -1;
+}
+fmPopupClose.addEventListener('click', closeFMPopup);
+fmRatioInput.addEventListener('input', ()=>{
+  if(fmPopupStepIdx < 0) return;
+  const v = +fmRatioInput.value;
+  FM_RATIO[fmPopupStepIdx] = v;
+  fmRatioVal.textContent = v.toFixed(2);
+});
+fmIndexInput.addEventListener('input', ()=>{
+  if(fmPopupStepIdx < 0) return;
+  const v = +fmIndexInput.value;
+  FM_INDEX[fmPopupStepIdx] = v;
+  fmIndexVal.textContent = v;
+});
+// click outside the popup closes it
+document.addEventListener('pointerdown', (e)=>{
+  if(fmPopup.hidden) return;
+  if(fmPopup.contains(e.target)) return;
+  if(e.target.classList && e.target.classList.contains('step-pitch')) return;
+  closeFMPopup();
+}, true);
 document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape') closeModal();
   if((e.code === 'Space' || e.key === ' ') && !['INPUT','TEXTAREA'].includes(e.target.tagName)){
@@ -824,6 +980,11 @@ const ACID_NOTES = [36,36,39,41, 36,36,43,36, 39,41,36,36, 44,36,41,39];
 const ACID_NOTE_MIN = 24; // C1
 const ACID_NOTE_MAX = 60; // C4
 
+// FM voice — 2-operator sine FM, per-step ratio + index
+let acidInstrument = 'acid'; // 'acid' | 'fm'
+const FM_RATIO = new Array(STEPS).fill(2);    // modulator : carrier
+const FM_INDEX = new Array(STEPS).fill(120);  // modulation index (0–400)
+
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 function noteName(m){ return NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1); }
 
@@ -849,10 +1010,31 @@ TRACKS.forEach((track, ti)=>{
 
 /* ---- build modal sequencer grid ---- */
 const seqEl = document.getElementById('seq');
+const instButtons = {};
+function setAcidInstrument(name){
+  acidInstrument = name;
+  if(instButtons.acid) instButtons.acid.classList.toggle('active', name === 'acid');
+  if(instButtons.fm) instButtons.fm.classList.toggle('active', name === 'fm');
+}
+
 TRACKS.forEach((track, ti)=>{
   const label = document.createElement('div');
   label.className = 'seq-label mono';
-  label.textContent = track.label;
+  if(track.id === 'acid'){
+    const toggle = document.createElement('div');
+    toggle.className = 'inst-toggle';
+    const a = document.createElement('button');
+    a.type = 'button'; a.textContent = 'ACID'; a.className = 'inst-btn active';
+    a.addEventListener('click', ()=>setAcidInstrument('acid'));
+    const f = document.createElement('button');
+    f.type = 'button'; f.textContent = 'FM'; f.className = 'inst-btn';
+    f.addEventListener('click', ()=>setAcidInstrument('fm'));
+    instButtons.acid = a; instButtons.fm = f;
+    toggle.append(a, f);
+    label.append(toggle);
+  } else {
+    label.textContent = track.label;
+  }
   seqEl.appendChild(label);
 
   const row = document.createElement('div');
@@ -882,19 +1064,26 @@ TRACKS.forEach((track, ti)=>{
       btn.appendChild(noteLabel);
 
       let dragging = false, moved = false, startY = 0, startNote = 0;
+      let longPressTimer = null, longPressed = false;
       const PX_PER_SEMITONE = 8;
 
       btn.addEventListener('pointerdown', (e)=>{
-        dragging = true; moved = false;
+        dragging = true; moved = false; longPressed = false;
         startY = e.clientY;
         startNote = ACID_NOTES[s];
         try { btn.setPointerCapture(e.pointerId); } catch(_){}
+        longPressTimer = setTimeout(()=>{
+          if(!moved){ longPressed = true; openFMPopup(s, btn); }
+        }, 450);
         e.preventDefault();
       });
       btn.addEventListener('pointermove', (e)=>{
         if(!dragging) return;
         const dy = startY - e.clientY;
-        if(Math.abs(dy) > 3) moved = true;
+        if(Math.abs(dy) > 3){
+          moved = true;
+          if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer = null; }
+        }
         const semis = Math.round(dy / PX_PER_SEMITONE);
         const next = Math.max(ACID_NOTE_MIN, Math.min(ACID_NOTE_MAX, startNote + semis));
         if(next !== ACID_NOTES[s]){
@@ -905,8 +1094,13 @@ TRACKS.forEach((track, ti)=>{
       btn.addEventListener('pointerup', (e)=>{
         if(!dragging) return;
         dragging = false;
+        if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer = null; }
         try { btn.releasePointerCapture(e.pointerId); } catch(_){}
-        if(!moved) toggleStep(); // a tap with no drag = toggle on/off
+        if(!moved && !longPressed) toggleStep();
+      });
+      btn.addEventListener('contextmenu', (e)=>{
+        e.preventDefault();
+        openFMPopup(s, btn);
       });
     } else {
       btn.addEventListener('click', toggleStep);
@@ -1271,6 +1465,49 @@ function playAcid(t, stepIndex, sliding, dest){
   acidLastFreq = freq;
 }
 
+function playFM(t, stepIndex, sliding, dest){
+  const note = ACID_NOTES[stepIndex];
+  const freq = midiToFreq(note);
+  const ratio = FM_RATIO[stepIndex];
+  const index = FM_INDEX[stepIndex];
+  const accented = !!ACID_ACCENT[stepIndex];
+  const noteLen = STEP_SECONDS * 1.4;
+  const startFreq = (sliding && acidLastFreq) ? acidLastFreq : freq;
+
+  const carrier = ctx.createOscillator();
+  carrier.type = 'sine';
+  carrier.frequency.setValueAtTime(startFreq, t);
+
+  const mod = ctx.createOscillator();
+  mod.type = 'sine';
+  mod.frequency.setValueAtTime(startFreq * ratio, t);
+
+  if(sliding && acidLastFreq){
+    carrier.frequency.linearRampToValueAtTime(freq, t + STEP_SECONDS * 0.7);
+    mod.frequency.linearRampToValueAtTime(freq * ratio, t + STEP_SECONDS * 0.7);
+  }
+
+  // mod depth scales with note frequency so timbre stays consistent across pitches
+  const modGain = ctx.createGain();
+  modGain.gain.setValueAtTime(freq * (index / 100), t);
+  mod.connect(modGain);
+  modGain.connect(carrier.frequency);
+
+  const ampEnv = ctx.createGain();
+  const peakGain = accented ? 0.36 : 0.24;
+  ampEnv.gain.setValueAtTime(0.0001, t);
+  ampEnv.gain.exponentialRampToValueAtTime(peakGain, t + 0.006);
+  ampEnv.gain.exponentialRampToValueAtTime(0.0001, t + noteLen);
+
+  carrier.connect(ampEnv);
+  ampEnv.connect(dest);
+
+  carrier.start(t); carrier.stop(t + STEP_SECONDS * 2);
+  mod.start(t); mod.stop(t + STEP_SECONDS * 2);
+
+  acidLastFreq = freq;
+}
+
 const VOICES = { kick: playKick, snare: playSnare, hat: playHat };
 
 let currentStep = 0;
@@ -1285,7 +1522,8 @@ function scheduleStep(stepIndex, time){
       if(pattern.acid[stepIndex]){
         const prevIndex = (stepIndex - 1 + STEPS) % STEPS;
         const sliding = !!pattern.acid[prevIndex];
-        playAcid(time, stepIndex, sliding, dest);
+        const voice = acidInstrument === 'fm' ? playFM : playAcid;
+        voice(time, stepIndex, sliding, dest);
       }
     } else if(pattern[track.id][stepIndex]){
       VOICES[track.id](time, dest);
