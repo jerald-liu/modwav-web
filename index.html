@@ -418,6 +418,44 @@
   .seq-row[data-track="2"] .step{ --track-color: #6FA8FF; }
   .seq-row[data-track="3"] .step{ --track-color: #E8D14C; }
 
+  /* tempo control: editable + drag up/down */
+  .tempo-ctrl{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.4rem 0.7rem;
+    cursor: ns-resize;
+    user-select: none;
+    touch-action: none;
+    transition: border-color 0.2s;
+  }
+  .tempo-ctrl:hover{ border-color: var(--ink-dim); }
+  .tempo-ctrl.dragging{ border-color: var(--phosphor); }
+  .tempo-label{
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+  .tempo-input{
+    width: 38px;
+    background: none;
+    border: none;
+    color: var(--ink);
+    font-size: 0.86rem;
+    font-weight: 500;
+    text-align: center;
+    padding: 0;
+    outline: none;
+    cursor: ns-resize;
+  }
+  .tempo-input:focus{ cursor: text; }
+  .tempo-input::-webkit-outer-spin-button,
+  .tempo-input::-webkit-inner-spin-button{ -webkit-appearance: none; margin: 0; }
+  .tempo-input[type=number]{ -moz-appearance: textfield; }
+
   /* acid pitch steps: drag up/down to retune */
   .step-pitch{
     touch-action: none;
@@ -686,7 +724,12 @@
     <div class="seq" id="seq"></div>
     <div class="ctrl-row">
       <button class="synth-start" id="synthToggle">Play</button>
-      <div class="ctrl"><span>BPM <b id="bpmVal">140</b></span><input type="range" id="bpmAmt" min="60" max="180" value="140"></div>
+      <div class="tempo-ctrl">
+        <span class="tempo-label mono">BPM</span>
+        <input type="number" id="bpmAmt" min="60" max="180" value="140" inputmode="numeric" class="tempo-input mono">
+      </div>
+    </div>
+    <div class="ctrl-row">
       <div class="ctrl"><span>DELAY</span><input type="range" id="delayAmt" min="0" max="100" value="22"></div>
       <div class="ctrl"><span>REVERB</span><input type="range" id="reverbAmt" min="0" max="100" value="28"></div>
     </div>
@@ -913,7 +956,7 @@ const statusText = document.getElementById('statusText');
 const delayAmtEl = document.getElementById('delayAmt');
 const reverbAmtEl = document.getElementById('reverbAmt');
 const bpmAmtEl = document.getElementById('bpmAmt');
-const bpmValEl = document.getElementById('bpmVal');
+const tempoCtrlEl = document.querySelector('.tempo-ctrl');
 
 delayAmtEl.addEventListener('input', ()=>{
   if(delayReturn) delayReturn.gain.value = delayAmtEl.value / 100;
@@ -921,14 +964,54 @@ delayAmtEl.addEventListener('input', ()=>{
 reverbAmtEl.addEventListener('input', ()=>{
   if(reverbReturn) reverbReturn.gain.value = reverbAmtEl.value / 100;
 });
-bpmAmtEl.addEventListener('input', ()=>{
-  TEMPO_BPM = +bpmAmtEl.value;
+function setTempo(bpm){
+  bpm = Math.max(60, Math.min(180, Math.round(bpm)));
+  TEMPO_BPM = bpm;
   STEP_SECONDS = 60 / TEMPO_BPM / 4;
-  bpmValEl.textContent = TEMPO_BPM;
+  if(bpmAmtEl.value != bpm) bpmAmtEl.value = bpm;
   if(delayNodeRef && ctx){
     delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * 3, ctx.currentTime, 0.03);
   }
+}
+
+bpmAmtEl.addEventListener('input', ()=>{
+  const v = parseInt(bpmAmtEl.value, 10);
+  if(!isNaN(v)) setTempo(v);
 });
+bpmAmtEl.addEventListener('blur', ()=>{ setTempo(parseInt(bpmAmtEl.value, 10) || 140); });
+bpmAmtEl.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') bpmAmtEl.blur();
+});
+
+// drag up/down on the tempo pill to scrub (like acid pitch steps)
+(function(){
+  let dragging = false, moved = false, startY = 0, startBpm = 0;
+  const PX_PER_BPM = 3;
+  tempoCtrlEl.addEventListener('pointerdown', (e)=>{
+    if(e.target === bpmAmtEl && document.activeElement === bpmAmtEl) return; // already editing
+    dragging = true; moved = false;
+    startY = e.clientY;
+    startBpm = TEMPO_BPM;
+    try { tempoCtrlEl.setPointerCapture(e.pointerId); } catch(_){}
+    tempoCtrlEl.classList.add('dragging');
+    e.preventDefault();
+  });
+  tempoCtrlEl.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    const dy = startY - e.clientY;
+    if(Math.abs(dy) > 3) moved = true;
+    setTempo(startBpm + Math.round(dy / PX_PER_BPM));
+  });
+  tempoCtrlEl.addEventListener('pointerup', (e)=>{
+    if(!dragging) return;
+    dragging = false;
+    try { tempoCtrlEl.releasePointerCapture(e.pointerId); } catch(_){}
+    tempoCtrlEl.classList.remove('dragging');
+    if(!moved && e.target === bpmAmtEl){
+      bpmAmtEl.focus(); bpmAmtEl.select();
+    }
+  });
+})();
 
 function makeImpulseResponse(ctx, duration, decay){
   const rate = ctx.sampleRate;
