@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mod.wav — SF</title>
+<meta name="description" content="A monthly hardware-centric performance and workshop night in San Francisco.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #0E0E0D;
+    --bg-raised: #161613;
+    --ink: #EDEAE3;
+    --ink-dim: #9C988C;
+    --line: #2A2A26;
+    --signal: #FF6A1A;
+    --phosphor: #8FFFC4;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .mono{
+    font-family: 'JetBrains Mono', 'Space Mono', ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  a{ color: inherit; }
+
+  /* ---------- layout shells ---------- */
+  section{
+    position: relative;
+    padding: 7rem 1.5rem;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  @media (max-width: 600px){
+    section{ padding: 4.5rem 1.25rem; }
+  }
+
+  .rule{
+    border: none;
+    border-top: 1px solid var(--line);
+    position: relative;
+    margin: 0 auto;
+    max-width: 760px;
+  }
+  .rule::before, .rule::after{
+    content: "";
+    position: absolute;
+    top: -3px;
+    width: 1px;
+    height: 7px;
+    background: var(--line);
+  }
+  .rule::before{ left: 1.5rem; }
+  .rule::after{ right: 1.5rem; }
+
+  /* ---------- reveal on scroll ---------- */
+  .reveal{
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.9s cubic-bezier(.16,.8,.3,1), transform 0.9s cubic-bezier(.16,.8,.3,1);
+  }
+  .reveal.in{
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (prefers-reduced-motion: reduce){
+    .reveal{ opacity:1; transform:none; transition:none; }
+    html{ scroll-behavior: auto; }
+  }
+
+  /* ---------- nav ---------- */
+  .nav{
+    position: fixed;
+    top:0; left:0; right:0;
+    z-index: 50;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    padding: 1.1rem 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    backdrop-filter: blur(6px);
+    background: linear-gradient(to bottom, rgba(14,14,13,0.85), rgba(14,14,13,0));
+    pointer-events: none;
+  }
+  .nav span{ color: var(--ink); }
+
+  /* ---------- hero ---------- */
+  .hero{
+    min-height: 100vh;
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 5.5rem;
+    padding-bottom: 2.5rem;
+  }
+  .hero .eyebrow{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--signal);
+    margin: 0 0 1.1rem;
+  }
+  .hero h1{
+    font-size: clamp(2.4rem, 8vw, 4.2rem);
+    line-height: 0.96;
+    letter-spacing: -0.01em;
+    margin: 0 0 1.1rem;
+    font-weight: 700;
+  }
+  .hero .sub{
+    font-size: 1.06rem;
+    line-height: 1.55;
+    color: var(--ink-dim);
+    max-width: 34rem;
+    margin: 0 0 2rem;
+  }
+  .hero .sub b{ color: var(--ink); font-weight: 600; }
+
+  .meta-row{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 1.8rem 2.4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    margin-bottom: 2.1rem;
+  }
+  .meta-row div span{
+    display:block;
+    color: var(--ink);
+    font-size: 0.92rem;
+    margin-top: 0.25rem;
+  }
+
+  /* ---------- synth panel ---------- */
+  .panel{
+    border: 1px solid var(--line);
+    background: var(--bg-raised);
+    border-radius: 6px;
+    padding: 1.4rem 1.4rem 1.2rem;
+  }
+  @media (max-width: 560px){
+    .panel{ padding: 1.1rem 0.85rem 1rem; }
+  }
+  .panel-head{
+    display:flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .panel-head .label{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .panel-head .status{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--ink-dim);
+    display:flex;
+    align-items:center;
+    gap: 0.4rem;
+  }
+  .dot{
+    width:6px; height:6px; border-radius:50%;
+    background: var(--ink-dim);
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  .dot.live{
+    background: var(--phosphor);
+    box-shadow: 0 0 6px var(--phosphor);
+  }
+
+  canvas#scope{
+    width: 100%;
+    height: 86px;
+    display:block;
+    border-radius: 4px;
+    background: #0A0A09;
+    margin-bottom: 1.2rem;
+  }
+
+  .seq{
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 0.45rem 0.6rem;
+    margin-bottom: 1.1rem;
+  }
+  @media (max-width: 560px){
+    .seq{ grid-template-columns: 1fr; gap: 0.2rem; }
+    .seq-label{ margin-top: 0.5rem; }
+  }
+  .seq-label{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
+    display:flex;
+    align-items:center;
+  }
+  .seq-row{
+    display:grid;
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+    gap: 0.28rem;
+  }
+  @media (max-width: 560px){
+    .seq-row{ gap: 0.16rem; margin-bottom: 0.3rem; }
+    .step{ aspect-ratio: auto; min-height: 0; height: 20px; }
+  }
+  .step{
+    aspect-ratio: 1;
+    border: 1px solid var(--line);
+    background: transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 0;
+    min-height: 22px;
+    transition: border-color 0.12s, background 0.12s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    position: relative;
+  }
+  .step:hover{ border-color: var(--ink-dim); }
+  /* beat markers: slightly stronger border every 4th step */
+  .step[data-beat="0"]{ border-left-color: #3A3A35; }
+  .step.on{
+    background: var(--track-color, var(--signal));
+    border-color: var(--track-color, var(--signal));
+  }
+  .step.playhead{
+    box-shadow: 0 0 0 1px var(--ink) inset;
+  }
+  .seq-row[data-track="0"] .step{ --track-color: #FF6A1A; }
+  .seq-row[data-track="1"] .step{ --track-color: #8FFFC4; }
+  .seq-row[data-track="2"] .step{ --track-color: #6FA8FF; }
+  .seq-row[data-track="3"] .step{ --track-color: #E8D14C; }
+
+  .ctrl-row{
+    display:flex;
+    gap: 1.6rem;
+    flex-wrap: wrap;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--ink-dim);
+  }
+  .ctrl{
+    display:flex;
+    align-items:center;
+    gap: 0.55rem;
+  }
+  .ctrl input[type="range"]{
+    -webkit-appearance: none;
+    width: 84px;
+    height: 2px;
+    background: var(--line);
+    outline: none;
+    border-radius: 2px;
+  }
+  .ctrl input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+    border: none;
+  }
+  .ctrl input[type="range"]::-moz-range-thumb{
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+    border: none;
+  }
+
+  .synth-start{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    background: none;
+    border: 1px solid var(--line);
+    padding: 0.5rem 0.9rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .synth-start:hover{ border-color: var(--signal); color: var(--ink); }
+
+  .panel-hint{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.66rem;
+    color: var(--ink-dim);
+    margin-top: 0.9rem;
+    opacity: 0.75;
+  }
+
+  /* ---------- sections ---------- */
+  h2{
+    font-size: clamp(1.5rem, 4vw, 1.9rem);
+    margin: 0 0 1.4rem;
+    letter-spacing: -0.01em;
+  }
+  .kicker{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--signal);
+    margin: 0 0 0.9rem;
+  }
+  p{
+    font-size: 1.02rem;
+    line-height: 1.7;
+    color: #CFCBC0;
+    margin: 0 0 1.1rem;
+  }
+  .lede{
+    font-size: 1.12rem;
+    color: var(--ink);
+  }
+
+  .spec-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.6rem 2rem;
+    margin-top: 2rem;
+  }
+  @media (max-width: 560px){
+    .spec-grid{ grid-template-columns: 1fr; }
+  }
+  .spec-grid dt{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 0.4rem;
+  }
+  .spec-grid dd{
+    margin:0;
+    font-size: 0.98rem;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  .crumbs{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.6rem;
+  }
+  .crumb{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ink-dim);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.35rem 0.8rem;
+  }
+
+  footer{
+    padding: 5rem 1.5rem 4rem;
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: left;
+  }
+  footer .big{
+    font-size: clamp(1.8rem, 6vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 1.6rem;
+  }
+  .cta-row{
+    display:flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 3rem;
+  }
+  .btn{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 0.85rem 1.4rem;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .btn.primary{
+    background: var(--signal);
+    border-color: var(--signal);
+    color: #0E0E0D;
+    font-weight: 600;
+  }
+  .btn.primary:hover{ background: #ff7d36; }
+  .btn.ghost{ color: var(--ink-dim); }
+  .btn.ghost:hover{ border-color: var(--ink-dim); color: var(--ink); }
+
+  .foot-meta{
+    display:flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--ink-dim);
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--line);
+  }
+
+  ::selection{ background: var(--signal); color: #0E0E0D; }
+</style>
+</head>
+<body>
+
+<nav class="nav"><span>MOD.WAV</span><span>SF — MONTHLY</span></nav>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <p class="eyebrow mono">A live hardware night — San Francisco</p>
+  <h1>Patch in.<br>Show up.</h1>
+  <p class="sub">Synths, modular rigs, MIDI controllers, anything with a panel and a patch cable. <b>Monthly, Thursdays.</b> Part performance, part open workshop — and every session gets recorded and shared, so the room doesn't end when the night does.</p>
+
+  <div class="meta-row">
+    <div>WHERE<span>Aurora SF</span></div>
+    <div>WHEN<span>Monthly · Thu</span></div>
+    <div>COST<span>Free</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span class="label">SIGNAL GENERATOR</span>
+      <span class="status"><span class="dot" id="statusDot"></span><span id="statusText">STOPPED</span></span>
+    </div>
+    <canvas id="scope" width="600" height="86"></canvas>
+    <div class="seq" id="seq"></div>
+    <div class="ctrl-row">
+      <button class="synth-start" id="synthToggle">Play</button>
+    </div>
+    <p class="panel-hint">tap a step to program it — 4 tracks, 16 steps, stopped by default</p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ================= CONCEPT ================= -->
+<section class="reveal">
+  <p class="kicker">The idea</p>
+  <h2>Everything past CDJs and a 4-track mixer.</h2>
+  <p class="lede">Mod.wav is a monthly night built around live hardware — the layer of electronic music that usually stays in bedrooms, builder Discords, and one-off warehouse meetups.</p>
+  <p>Some sets are full live performances from booked artists. Some are smaller "bring your rig" slots, where people from the local builder scene plug in and show what they've been working on. A few stations are left open and plug-and-play, so people who aren't performing yet can still get hands-on instead of just watching from across the room.</p>
+  <p>Every session is recorded straight off the board and released online — credited to whoever played that night. No open submissions, no sample packs assembled after the fact. Just what actually happened in the room, for people who couldn't make it out.</p>
+</section>
+
+<hr class="rule">
+
+<!-- ================= FORMAT ================= -->
+<section class="reveal">
+  <p class="kicker">Format</p>
+  <h2>Low-stakes by design.</h2>
+  <dl class="spec-grid">
+    <dt>What</dt>
+    <dd>Hardware-centric performance + workshop night. Plug-and-play stations alongside booked live sets.</dd>
+    <dt>Where</dt>
+    <dd>Aurora SF, 302 Valencia St</dd>
+    <dt>When</dt>
+    <dd>Monthly, Thursdays — occasional exceptions for booked performances</dd>
+    <dt>Cost</dt>
+    <dd>Free</dd>
+    <dt>Crew</dt>
+    <dd>Volunteer-run, with occasional co-promoted nights alongside partner crews</dd>
+    <dt>Audience</dt>
+    <dd>Builders, modular/synth heads, instrumentalists, the just-curious</dd>
+  </dl>
+  <div class="crumbs">
+    <span class="crumb mono">Eurorack</span>
+    <span class="crumb mono">MIDI</span>
+    <span class="crumb mono">DIY builds</span>
+    <span class="crumb mono">circuit-bent</span>
+    <span class="crumb mono">generative</span>
+  </div>
+</section>
+
+<hr class="rule">
+
+<!-- ================= ARTIFACT ================= -->
+<section class="reveal">
+  <p class="kicker">After the night</p>
+  <h2>The room doesn't stop at last call.</h2>
+  <p>Each session gets recorded live and put out online — probably Bandcamp, kept flexible depending on how each contributor wants their work framed — credited to whoever played. It's a way for people who couldn't be there in person, or aren't ready to perform hardware live yet, to still stay connected to what the room actually produced.</p>
+</section>
+
+<hr class="rule">
+
+<!-- ================= FOOTER / CTA ================= -->
+<footer>
+  <p class="big">Got a rig?<br>Bring it through.</p>
+  <div class="cta-row">
+    <a class="btn primary" href="mailto:hello@modwav.xyz?subject=Mod.wav%20—%20I%27d%20like%20to%20get%20involved">Get in touch</a>
+    <a class="btn ghost" href="#top">Back to top</a>
+  </div>
+  <div class="foot-meta">
+    <span>MOD.WAV</span>
+    <span id="year"></span>
+  </div>
+</footer>
+
+<script>
+/* ---------------- scroll reveal ---------------- */
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: 0.15 });
+revealEls.forEach(el=>io.observe(el));
+
+document.getElementById('year').textContent = new Date().getFullYear();
+
+/* ---------------- step sequencer ---------------- */
+let ctx = null;
+let masterGain = null;
+let analyser = null;
+let running = false;
+let droneNodes = [];
+
+const STEPS = 16;
+const TEMPO_BPM = 140;
+const STEP_SECONDS = 60 / TEMPO_BPM / 4; // 16th notes
+
+const TRACKS = [
+  { id:'kick',  label:'KICK'  },
+  { id:'snare', label:'SNARE' },
+  { id:'hat',   label:'HAT'   },
+  { id:'acid',  label:'ACID'  },
+];
+
+// simple default pattern — sounds like something the instant you hit play
+const DEFAULT_PATTERN = {
+  kick:  [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+  snare: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1],
+  hat:   [1,0,1,0, 1,0,1,1, 1,0,1,0, 1,0,1,1],
+  acid:  [1,1,0,1, 0,0,1,0, 1,1,0,0, 1,0,1,0],
+};
+
+// per-step accent for the acid line — every 3rd active step hits harder, 303-style
+const ACID_ACCENT = [1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,0,0];
+
+// acid note per step (scale degrees around a low root — slides happen automatically
+// whenever two consecutive steps are both active, classic 303 behavior)
+const ACID_NOTES = [36,36,39,41, 36,36,43,36, 39,41,36,36, 44,36,41,39]; // MIDI note numbers
+
+const pattern = {};
+TRACKS.forEach(t => pattern[t.id] = DEFAULT_PATTERN[t.id].slice());
+
+// build the grid
+const seqEl = document.getElementById('seq');
+TRACKS.forEach((track, ti)=>{
+  const label = document.createElement('div');
+  label.className = 'seq-label mono';
+  label.textContent = track.label;
+  seqEl.appendChild(label);
+
+  const row = document.createElement('div');
+  row.className = 'seq-row';
+  row.dataset.track = ti;
+  for(let s=0; s<STEPS; s++){
+    const btn = document.createElement('button');
+    btn.className = 'step';
+    btn.dataset.track = track.id;
+    btn.dataset.step = s;
+    if(s % 4 === 0) btn.dataset.beat = '0';
+    if(pattern[track.id][s]) btn.classList.add('on');
+    btn.addEventListener('click', ()=>{
+      pattern[track.id][s] = pattern[track.id][s] ? 0 : 1;
+      btn.classList.toggle('on');
+    });
+    row.appendChild(btn);
+  }
+  seqEl.appendChild(row);
+});
+
+const toggleBtn = document.getElementById('synthToggle');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+function ensureAudio(){
+  if(ctx) return;
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = ctx.createGain();
+  masterGain.gain.value = 0.6;
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 1024;
+  masterGain.connect(analyser);
+  analyser.connect(ctx.destination);
+
+  // soft ambient drone bed, very low, so the page has a faint pulse even when stopped
+  const drone = ctx.createOscillator();
+  drone.type = 'sine';
+  drone.frequency.value = 65.41; // C2
+  const droneGain = ctx.createGain();
+  droneGain.gain.value = 0.0;
+  drone.connect(droneGain);
+  droneGain.connect(masterGain);
+  drone.start();
+  droneNodes = [drone, droneGain];
+}
+
+/* ---- 909-style drum voices: modeled on the original's analog synthesis, not samples ---- */
+function playKick(t){
+  // triangle-core oscillator with a fast pitch envelope, like the 909's VCO+VCA core
+  // pitched down 7 semitones from the original (ratio ~0.6674)
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(38.7, t);
+  osc.frequency.exponentialRampToValueAtTime(106.8, t + 0.001);
+  osc.frequency.exponentialRampToValueAtTime(32, t + 0.14);
+
+  const ampEnv = ctx.createGain();
+  ampEnv.gain.setValueAtTime(0.0001, t);
+  ampEnv.gain.exponentialRampToValueAtTime(1.0, t + 0.002);
+  ampEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.55); // longer tail
+
+  // a touch of waveshaping for the 909's characteristic edge
+  const shaper = ctx.createWaveShaper();
+  const curve = new Float32Array(256);
+  for(let i=0;i<256;i++){ const x = (i/255)*2-1; curve[i] = Math.tanh(x*2.2); }
+  shaper.curve = curve;
+
+  // short click transient for attack snap
+  const click = ctx.createOscillator();
+  click.type = 'square';
+  click.frequency.value = 1800;
+  const clickEnv = ctx.createGain();
+  clickEnv.gain.setValueAtTime(0.18, t);
+  clickEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.006);
+
+  osc.connect(shaper);
+  shaper.connect(ampEnv);
+  ampEnv.connect(masterGain);
+  click.connect(clickEnv);
+  clickEnv.connect(masterGain);
+
+  osc.start(t); osc.stop(t + 0.58);
+  click.start(t); click.stop(t + 0.01);
+}
+
+function playSnare(t){
+  // 909 snare = two detuned tonal oscillators (body) + filtered noise (snap)
+  const osc1 = ctx.createOscillator();
+  osc1.type = 'triangle';
+  osc1.frequency.value = 190;
+  const osc2 = ctx.createOscillator();
+  osc2.type = 'triangle';
+  osc2.frequency.value = 264;
+
+  const bodyEnv = ctx.createGain();
+  bodyEnv.gain.setValueAtTime(0.45, t);
+  bodyEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+
+  osc1.connect(bodyEnv);
+  osc2.connect(bodyEnv);
+  bodyEnv.connect(masterGain);
+  osc1.start(t); osc1.stop(t + 0.14);
+  osc2.start(t); osc2.stop(t + 0.14);
+
+  const bufferSize = ctx.sampleRate * 0.2;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0; i<bufferSize; i++) data[i] = Math.random()*2-1;
+
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
+
+  const highpass = ctx.createBiquadFilter();
+  highpass.type = 'highpass';
+  highpass.frequency.value = 900;
+  const bandpass = ctx.createBiquadFilter();
+  bandpass.type = 'bandpass';
+  bandpass.frequency.value = 2400;
+  bandpass.Q.value = 0.7;
+
+  const noiseEnv = ctx.createGain();
+  noiseEnv.gain.setValueAtTime(0.55, t);
+  noiseEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+
+  noise.connect(highpass);
+  highpass.connect(bandpass);
+  bandpass.connect(noiseEnv);
+  noiseEnv.connect(masterGain);
+  noise.start(t);
+  noise.stop(t + 0.18);
+}
+
+function playHat(t){
+  // 909 hats: six square oscillators at inharmonic ratios through a highpass — metallic ring
+  const ratios = [1, 1.342, 1.787, 2.0, 2.245, 2.6];
+  const fundamental = 245;
+  const hatGain = ctx.createGain();
+
+  const highpass = ctx.createBiquadFilter();
+  highpass.type = 'highpass';
+  highpass.frequency.value = 6800;
+
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(0.28, t);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+
+  ratios.forEach(r=>{
+    const o = ctx.createOscillator();
+    o.type = 'square';
+    o.frequency.value = fundamental * r;
+    o.connect(hatGain);
+    o.start(t);
+    o.stop(t + 0.06);
+  });
+
+  hatGain.connect(highpass);
+  highpass.connect(env);
+  env.connect(masterGain);
+}
+
+/* ---- acid line: sawtooth -> resonant lowpass with envelope + accent + auto-slide ---- */
+let acidLastFreq = null;
+
+function midiToFreq(m){ return 440 * Math.pow(2, (m-69)/12); }
+
+// deterministic pseudo-random per step, so the same pattern always sounds the same
+// but each step has its own slight character (like nudging the env-mod/decay knobs note to note)
+function stepWobble(stepIndex, salt){
+  const x = Math.sin(stepIndex * 12.9898 + salt * 78.233) * 43758.5453;
+  return x - Math.floor(x); // 0..1
+}
+
+function playAcid(t, stepIndex, sliding){
+  const note = ACID_NOTES[stepIndex % ACID_NOTES.length];
+  const freq = midiToFreq(note);
+  const accented = !!ACID_ACCENT[stepIndex % ACID_ACCENT.length];
+
+  // per-step wobble: each one nudges cutoff/resonance/decay a little differently
+  const wCutoff = stepWobble(stepIndex, 1);
+  const wReso = stepWobble(stepIndex, 2);
+  const wDecay = stepWobble(stepIndex, 3);
+
+  const q = (accented ? 11 : 6) + wReso * 7;
+  const peakGain = accented ? 0.34 : 0.22;
+  // decay length varies per step — stretched out for a longer, more smeared acid tail
+  const noteLen = STEP_SECONDS * (1.3 + wDecay * 1.1);
+  const noteTrack = (freq / midiToFreq(36)) * 400; // higher notes push cutoff brighter
+  const cutoffPeak = (accented ? 2800 : 1500) + noteTrack + wCutoff * 1100;
+  const cutoffFloor = 160 + wCutoff * 90;
+
+  // every note is a fresh, independent voice — note and envelope always retrigger.
+  // "slide" only changes how the pitch arrives: gliding in from the previous note
+  // instead of starting flat at its own frequency.
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  if(sliding && acidLastFreq){
+    osc.frequency.setValueAtTime(acidLastFreq, t);
+    osc.frequency.linearRampToValueAtTime(freq, t + STEP_SECONDS * 0.75);
+  } else {
+    osc.frequency.setValueAtTime(freq, t);
+  }
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.Q.value = q;
+  filter.frequency.setValueAtTime(cutoffPeak, t);
+  filter.frequency.exponentialRampToValueAtTime(cutoffFloor, t + noteLen * (0.7 + wDecay * 0.2));
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(peakGain, t + 0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + noteLen);
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+  osc.start(t);
+  osc.stop(t + STEP_SECONDS * 2.5);
+
+  acidLastFreq = freq;
+}
+
+const VOICES = { kick: playKick, snare: playSnare, hat: playHat };
+
+/* ---- scheduler (lookahead pattern, avoids setInterval drift) ---- */
+let currentStep = 0;
+let nextStepTime = 0;
+let schedulerTimer = null;
+const SCHEDULE_AHEAD = 0.12;
+
+function scheduleStep(stepIndex, time){
+  TRACKS.forEach(track=>{
+    if(track.id === 'acid'){
+      if(pattern.acid[stepIndex]){
+        const prevIndex = (stepIndex - 1 + STEPS) % STEPS;
+        const sliding = !!pattern.acid[prevIndex]; // consecutive active steps slide, 303-style
+        playAcid(time, stepIndex, sliding);
+      }
+    } else if(pattern[track.id][stepIndex]){
+      VOICES[track.id](time);
+    }
+  });
+  highlightPlayhead(stepIndex);
+}
+
+function highlightPlayhead(stepIndex){
+  document.querySelectorAll('.step.playhead').forEach(el=>el.classList.remove('playhead'));
+  document.querySelectorAll(`.step[data-step="${stepIndex}"]`).forEach(el=>el.classList.add('playhead'));
+}
+
+function schedulerLoop(){
+  while(nextStepTime < ctx.currentTime + SCHEDULE_AHEAD){
+    scheduleStep(currentStep, nextStepTime);
+    nextStepTime += STEP_SECONDS;
+    currentStep = (currentStep + 1) % STEPS;
+  }
+  schedulerTimer = setTimeout(schedulerLoop, 25);
+}
+
+function startSequencer(){
+  currentStep = 0;
+  nextStepTime = ctx.currentTime + 0.05;
+  acidLastFreq = null; // fresh start, no slide from a previous run
+  schedulerLoop();
+}
+
+function stopSequencer(){
+  if(schedulerTimer) clearTimeout(schedulerTimer);
+  document.querySelectorAll('.step.playhead').forEach(el=>el.classList.remove('playhead'));
+}
+
+toggleBtn.addEventListener('click', async ()=>{
+  ensureAudio();
+  if(ctx.state === 'suspended') await ctx.resume();
+
+  running = !running;
+  if(running){
+    toggleBtn.textContent = 'Stop';
+    statusDot.classList.add('live');
+    statusText.textContent = 'PLAYING';
+    if(droneNodes[1]) droneNodes[1].gain.linearRampToValueAtTime(0.04, ctx.currentTime + 1.2);
+    startSequencer();
+  } else {
+    toggleBtn.textContent = 'Play';
+    statusDot.classList.remove('live');
+    statusText.textContent = 'STOPPED';
+    if(droneNodes[1]) droneNodes[1].gain.linearRampToValueAtTime(0.0, ctx.currentTime + 0.6);
+    stopSequencer();
+  }
+});
+
+/* ---------------- oscilloscope draw ---------------- */
+const canvas = document.getElementById('scope');
+const cctx = canvas.getContext('2d');
+let dataArray;
+
+function resizeCanvas(){
+  const ratio = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * ratio;
+  canvas.height = h * ratio;
+  cctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function drawIdle(t){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  cctx.clearRect(0,0,w,h);
+  cctx.beginPath();
+  cctx.strokeStyle = '#4A4842';
+  cctx.lineWidth = 1.2;
+  const midY = h/2;
+  for(let x=0; x<w; x++){
+    const y = midY + Math.sin((x*0.045) + t*0.0017) * 7 * Math.sin(t*0.0004);
+    if(x===0) cctx.moveTo(x,y); else cctx.lineTo(x,y);
+  }
+  cctx.stroke();
+}
+
+function drawLive(){
+  analyser.getByteTimeDomainData(dataArray);
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  cctx.clearRect(0,0,w,h);
+  cctx.beginPath();
+  cctx.strokeStyle = '#8FFFC4';
+  cctx.lineWidth = 1.4;
+  cctx.shadowColor = 'rgba(143,255,196,0.45)';
+  cctx.shadowBlur = 4;
+  const sliceWidth = w / dataArray.length;
+  let x = 0;
+  for(let i=0; i<dataArray.length; i++){
+    const v = dataArray[i] / 128.0;
+    const y = (v * h) / 2;
+    if(i===0) cctx.moveTo(x,y); else cctx.lineTo(x,y);
+    x += sliceWidth;
+  }
+  cctx.stroke();
+  cctx.shadowBlur = 0;
+}
+
+function loop(t){
+  if(running && analyser){
+    if(!dataArray) dataArray = new Uint8Array(analyser.fftSize);
+    drawLive();
+  } else {
+    drawIdle(t);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
