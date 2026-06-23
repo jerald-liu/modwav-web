@@ -538,7 +538,8 @@
     gap: 0.28rem;
   }
   /* horizontal-scroll wrapper around each step row (mobile) */
-  .seq-row-scroll{ position: relative; min-width: 0; }
+  .seq-row-scroll{ min-width: 0; }
+  .seq-row-frame{ position: relative; min-width: 0; }
   .step{
     aspect-ratio: 1;
     border: 1px solid var(--line);
@@ -577,6 +578,7 @@
       min-height: 0;
     }
     .seq-row-scroll{
+      width: 100%;
       overflow-x: auto;
       overflow-y: visible;
       -webkit-overflow-scrolling: touch;
@@ -584,30 +586,21 @@
       padding-bottom: 2px;
     }
     .seq-row-scroll::-webkit-scrollbar{ display: none; }
-    /* edge gradients hint that there's more to scroll to */
-    .seq-row-scroll::before,
-    .seq-row-scroll::after{
+    /* thin phosphor edge at the visible right of each row — fades a tiny
+       gradient just behind it when more steps remain to scroll into */
+    .seq-row-frame::after{
       content: "";
       position: absolute;
       top: 0; bottom: 0;
-      width: 26px;
+      right: 0;
+      width: 10px;
       pointer-events: none;
       z-index: 3;
       opacity: 1;
       transition: opacity 0.2s;
+      background: linear-gradient(270deg, var(--phosphor), rgba(22,22,19,0));
     }
-    .seq-row-scroll::before{
-      left: 0;
-      background: linear-gradient(90deg, var(--bg-raised) 30%, rgba(22,22,19,0) 100%);
-    }
-    .seq-row-scroll::after{
-      right: 0;
-      background: linear-gradient(270deg, var(--bg-raised) 30%, rgba(22,22,19,0) 100%);
-      border-right: 2px solid var(--phosphor);
-      box-shadow: -2px 0 8px -2px var(--phosphor);
-    }
-    .seq-row-scroll.at-start::before{ opacity: 0; }
-    .seq-row-scroll.at-end::after{ opacity: 0; }
+    .seq-row-frame.at-end::after{ opacity: 0; }
   }
   .step.playhead{
     box-shadow: 0 0 0 1px var(--ink) inset;
@@ -1339,10 +1332,13 @@ TRACKS.forEach((track, ti)=>{
     row.appendChild(btn);
   }
   const rowScroll = document.createElement('div');
-  rowScroll.className = 'seq-row-scroll at-start';
+  rowScroll.className = 'seq-row-scroll';
   rowScroll.appendChild(row);
-  rowScroll.addEventListener('scroll', ()=>updateScrollEdges(rowScroll), { passive: true });
-  seqEl.appendChild(rowScroll);
+  const rowFrame = document.createElement('div');
+  rowFrame.className = 'seq-row-frame at-start';
+  rowFrame.appendChild(rowScroll);
+  rowScroll.addEventListener('scroll', ()=>updateScrollEdges(rowScroll, rowFrame), { passive: true });
+  seqEl.appendChild(rowFrame);
 
   const sends = document.createElement('div');
   sends.className = 'send-knobs';
@@ -1370,13 +1366,14 @@ TRACKS.forEach((track, ti)=>{
   seqEl.appendChild(sends);
 });
 
-function updateScrollEdges(el){
+function updateScrollEdges(el, frame){
+  const target = frame || el.parentElement;
   const max = el.scrollWidth - el.clientWidth;
-  el.classList.toggle('at-start', el.scrollLeft <= 1);
-  el.classList.toggle('at-end', el.scrollLeft >= max - 1);
+  target.classList.toggle('at-start', el.scrollLeft <= 1);
+  target.classList.toggle('at-end', el.scrollLeft >= max - 1);
 }
 function refreshAllScrollEdges(){
-  document.querySelectorAll('.seq-row-scroll').forEach(updateScrollEdges);
+  document.querySelectorAll('.seq-row-scroll').forEach(el => updateScrollEdges(el));
 }
 
 function labelTag(text, input){
