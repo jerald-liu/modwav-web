@@ -1704,6 +1704,7 @@ function loop(t){
   resizeOne(bgCanvas);
   if(running && analyser){
     if(!dataArray) dataArray = new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(dataArray);
     drawLiveTo(cctx, canvas, true);
     drawLiveTo(bgCtx, bgCanvas, false);
   } else {
