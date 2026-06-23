@@ -1060,7 +1060,6 @@
   <div class="synth-modal">
     <button class="synth-modal-close" id="synthClose">✕</button>
     <div class="panel-head">
-      <span class="label">SIGNAL GENERATOR</span>
       <span class="status"><span class="dot" id="modalDot"></span><span id="statusText">STOPPED</span></span>
     </div>
     <canvas id="scope" width="600" height="86"></canvas>
@@ -1069,7 +1068,7 @@
     </div>
     <div class="seq" id="seq"></div>
     <div class="ctrl-row">
-      <button class="synth-start" id="synthToggle">Play</button>
+      <button class="synth-start" id="synthToggle" title="Play" aria-label="Play">▶</button>
       <div class="tempo-ctrl">
         <span class="tempo-label mono">BPM</span>
         <input type="number" id="bpmAmt" min="60" max="180" value="140" inputmode="numeric" class="tempo-input mono">
@@ -1912,7 +1911,9 @@ function stopSequencer(){
 function setPlayingState(isPlaying){
   running = isPlaying;
   if(running){
-    toggleBtn.textContent = 'Stop';
+    toggleBtn.textContent = '◼';
+    toggleBtn.title = 'Stop';
+    toggleBtn.setAttribute('aria-label', 'Stop');
     barPlayBtn.textContent = 'Stop';
     statusDot.classList.add('live');
     modalDot.classList.add('live');
@@ -1920,7 +1921,9 @@ function setPlayingState(isPlaying){
     if(droneNodes[1]) droneNodes[1].gain.linearRampToValueAtTime(0.04, ctx.currentTime + 1.2);
     startSequencer();
   } else {
-    toggleBtn.textContent = 'Play';
+    toggleBtn.textContent = '▶';
+    toggleBtn.title = 'Play';
+    toggleBtn.setAttribute('aria-label', 'Play');
     barPlayBtn.textContent = 'Play';
     statusDot.classList.remove('live');
     modalDot.classList.remove('live');
