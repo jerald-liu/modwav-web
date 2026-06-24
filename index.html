@@ -186,23 +186,16 @@
   /* ---------- floating bottom bar ---------- */
   .synth-bar{
     position: fixed;
-    bottom: 0; left: 0; right: 0;
+    bottom: 0.6rem; right: 1.2rem;
     z-index: 100;
-    background: rgba(22,22,19,0.75);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid var(--line);
-    padding: 0.6rem 1.2rem;
     display: flex;
     align-items: center;
     gap: 0.8rem;
     cursor: pointer;
     opacity: 0.5;
-    transition: opacity 0.3s, background 0.3s;
+    transition: opacity 0.3s;
   }
-  .synth-bar:hover{
-    opacity: 1;
-    background: rgba(22,22,19,0.92);
-  }
+  .synth-bar:hover{ opacity: 1; }
   .synth-bar .bar-label{
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.62rem;
@@ -243,7 +236,6 @@
   }
   .synth-bar .bar-play{ order: 1; }
   .synth-bar .bar-status{ order: 2; }
-  .synth-bar{ justify-content: flex-end; }
   .bar-seq-row{
     display: grid;
     grid-template-columns: repeat(16, 6px);
