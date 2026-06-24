@@ -450,7 +450,7 @@
     height: auto;
     z-index: 0;
     pointer-events: none;
-    --trace: #1e1e1a;
+    --trace: #3a3a32;
   }
   @media (max-width: 720px){
     .circuit-bg{ width: 100%; top: 18rem; }
@@ -1018,30 +1018,30 @@
 <body>
 
 <svg class="circuit-bg" aria-hidden="true" viewBox="0 0 600 2200" preserveAspectRatio="xMidYMin meet" xmlns="http://www.w3.org/2000/svg">
-  <g fill="none" stroke="#1e1e1a" stroke-width="1.1" font-family="'JetBrains Mono', monospace">
+  <g fill="none" stroke="#3a3a32" stroke-width="1.6" font-family="'JetBrains Mono', monospace">
     <!-- power rail dash -->
     <line x1="30" y1="40" x2="570" y2="40" stroke-dasharray="2 3"/>
-    <text x="574" y="44" fill="#1e1e1a" font-size="9">+V</text>
+    <text x="574" y="44" fill="#3a3a32" font-size="9">+V</text>
 
     <!-- ===== CLOCK · LM555 ===== -->
-    <text x="40" y="68" fill="#1e1e1a" font-size="11">CLOCK · LM555</text>
+    <text x="40" y="68" fill="#3a3a32" font-size="11">CLOCK · LM555</text>
     <!-- RT pot -->
     <line x1="60" y1="40" x2="60" y2="80"/>
     <rect x="50" y="80" width="20" height="48"/>
     <line x1="50" y1="100" x2="70" y2="108"/>
-    <text x="36" y="108" fill="#1e1e1a" font-size="8" text-anchor="end">RT 100k</text>
+    <text x="36" y="108" fill="#3a3a32" font-size="8" text-anchor="end">RT 100k</text>
     <line x1="70" y1="108" x2="160" y2="108"/>
     <!-- 555 IC -->
     <rect x="160" y="80" width="180" height="160"/>
-    <text x="250" y="170" fill="#1e1e1a" text-anchor="middle" font-size="11">U1 · 555</text>
-    <text x="162" y="100" fill="#1e1e1a" font-size="8">1 GND</text>
-    <text x="162" y="120" fill="#1e1e1a" font-size="8">2 TRG</text>
-    <text x="162" y="140" fill="#1e1e1a" font-size="8">6 THR</text>
-    <text x="162" y="160" fill="#1e1e1a" font-size="8">5 CV</text>
-    <text x="338" y="100" fill="#1e1e1a" font-size="8" text-anchor="end">8 V+</text>
-    <text x="338" y="120" fill="#1e1e1a" font-size="8" text-anchor="end">3 OUT</text>
-    <text x="338" y="140" fill="#1e1e1a" font-size="8" text-anchor="end">7 DIS</text>
-    <text x="338" y="160" fill="#1e1e1a" font-size="8" text-anchor="end">4 RST</text>
+    <text x="250" y="170" fill="#3a3a32" text-anchor="middle" font-size="11">U1 · 555</text>
+    <text x="162" y="100" fill="#3a3a32" font-size="8">1 GND</text>
+    <text x="162" y="120" fill="#3a3a32" font-size="8">2 TRG</text>
+    <text x="162" y="140" fill="#3a3a32" font-size="8">6 THR</text>
+    <text x="162" y="160" fill="#3a3a32" font-size="8">5 CV</text>
+    <text x="338" y="100" fill="#3a3a32" font-size="8" text-anchor="end">8 V+</text>
+    <text x="338" y="120" fill="#3a3a32" font-size="8" text-anchor="end">3 OUT</text>
+    <text x="338" y="140" fill="#3a3a32" font-size="8" text-anchor="end">7 DIS</text>
+    <text x="338" y="160" fill="#3a3a32" font-size="8" text-anchor="end">4 RST</text>
     <!-- V+ to pin 8 -->
     <line x1="250" y1="40" x2="250" y2="80"/>
     <!-- RST tied to V+ -->
@@ -1054,7 +1054,7 @@
     <line x1="130" y1="128" x2="130" y2="180"/>
     <line x1="118" y1="180" x2="142" y2="180"/>
     <line x1="122" y1="186" x2="138" y2="186"/>
-    <text x="150" y="186" fill="#1e1e1a" font-size="8">CT 1uF</text>
+    <text x="150" y="186" fill="#3a3a32" font-size="8">CT 1uF</text>
     <line x1="130" y1="186" x2="130" y2="208"/>
     <path d="M120 208 L140 208 M122 213 L138 213 M125 218 L135 218"/>
     <!-- CV decoupling -->
@@ -1062,7 +1062,7 @@
     <line x1="115" y1="158" x2="115" y2="200"/>
     <line x1="107" y1="200" x2="123" y2="200"/>
     <line x1="110" y1="206" x2="120" y2="206"/>
-    <text x="100" y="200" fill="#1e1e1a" font-size="8" text-anchor="end">10n</text>
+    <text x="100" y="200" fill="#3a3a32" font-size="8" text-anchor="end">10n</text>
     <line x1="115" y1="206" x2="115" y2="226"/>
     <path d="M107 226 L123 226 M109 231 L121 231 M112 236 L118 236"/>
     <!-- DIS pin 7 → between RT and CT (timing) -->
@@ -1071,21 +1071,21 @@
     <line x1="380" y1="108" x2="70" y2="108"/>
     <!-- CLK output pin 3 to bottom -->
     <line x1="340" y1="118" x2="430" y2="118"/>
-    <text x="380" y="112" fill="#1e1e1a" font-size="10">CLK</text>
+    <text x="380" y="112" fill="#3a3a32" font-size="10">CLK</text>
     <line x1="430" y1="118" x2="430" y2="280"/>
     <line x1="430" y1="280" x2="280" y2="280"/>
     <line x1="280" y1="280" x2="280" y2="320"/>
 
     <!-- ===== COUNTER · CD4040 ===== -->
-    <text x="40" y="304" fill="#1e1e1a" font-size="11">÷N COUNTER · CD4040</text>
+    <text x="40" y="304" fill="#3a3a32" font-size="11">÷N COUNTER · CD4040</text>
     <rect x="40" y="320" width="240" height="100"/>
-    <text x="160" y="400" fill="#1e1e1a" text-anchor="middle" font-size="11">U2</text>
-    <text x="42" y="338" fill="#1e1e1a" font-size="8">10 CLK</text>
-    <text x="42" y="358" fill="#1e1e1a" font-size="8">11 RST</text>
-    <text x="278" y="338" fill="#1e1e1a" font-size="8" text-anchor="end">9  Q0</text>
-    <text x="278" y="358" fill="#1e1e1a" font-size="8" text-anchor="end">7  Q1</text>
-    <text x="278" y="378" fill="#1e1e1a" font-size="8" text-anchor="end">6  Q2</text>
-    <text x="278" y="398" fill="#1e1e1a" font-size="8" text-anchor="end">5  Q3</text>
+    <text x="160" y="400" fill="#3a3a32" text-anchor="middle" font-size="11">U2</text>
+    <text x="42" y="338" fill="#3a3a32" font-size="8">10 CLK</text>
+    <text x="42" y="358" fill="#3a3a32" font-size="8">11 RST</text>
+    <text x="278" y="338" fill="#3a3a32" font-size="8" text-anchor="end">9  Q0</text>
+    <text x="278" y="358" fill="#3a3a32" font-size="8" text-anchor="end">7  Q1</text>
+    <text x="278" y="378" fill="#3a3a32" font-size="8" text-anchor="end">6  Q2</text>
+    <text x="278" y="398" fill="#3a3a32" font-size="8" text-anchor="end">5  Q3</text>
     <!-- CLK input goes into top of counter (custom routing already above) -->
     <line x1="40" y1="334" x2="280" y2="334"/>
     <!-- RST tied low -->
@@ -1103,16 +1103,16 @@
     <line x1="320" y1="394" x2="320" y2="470"/>
 
     <!-- ===== 1-OF-16 DECODER · CD4514 ===== -->
-    <text x="40" y="454" fill="#1e1e1a" font-size="11">1-OF-16 DECODE · CD4514</text>
+    <text x="40" y="454" fill="#3a3a32" font-size="11">1-OF-16 DECODE · CD4514</text>
     <rect x="40" y="470" width="240" height="380"/>
-    <text x="160" y="844" fill="#1e1e1a" text-anchor="middle" font-size="11">U3</text>
-    <text x="42" y="488" fill="#1e1e1a" font-size="8">2  A0</text>
-    <text x="42" y="506" fill="#1e1e1a" font-size="8">3  A1</text>
-    <text x="42" y="524" fill="#1e1e1a" font-size="8">21 A2</text>
-    <text x="42" y="542" fill="#1e1e1a" font-size="8">22 A3</text>
-    <text x="42" y="562" fill="#1e1e1a" font-size="8">1  STR</text>
-    <text x="42" y="580" fill="#1e1e1a" font-size="8">23 INH</text>
-    <g font-size="8" fill="#1e1e1a">
+    <text x="160" y="844" fill="#3a3a32" text-anchor="middle" font-size="11">U3</text>
+    <text x="42" y="488" fill="#3a3a32" font-size="8">2  A0</text>
+    <text x="42" y="506" fill="#3a3a32" font-size="8">3  A1</text>
+    <text x="42" y="524" fill="#3a3a32" font-size="8">21 A2</text>
+    <text x="42" y="542" fill="#3a3a32" font-size="8">22 A3</text>
+    <text x="42" y="562" fill="#3a3a32" font-size="8">1  STR</text>
+    <text x="42" y="580" fill="#3a3a32" font-size="8">23 INH</text>
+    <g font-size="8" fill="#3a3a32">
       <text x="278" y="488" text-anchor="end">S0</text>
       <text x="278" y="506" text-anchor="end">S1</text>
       <text x="278" y="524" text-anchor="end">S2</text>
@@ -1163,8 +1163,8 @@
     </g>
 
     <!-- ===== STEP MATRIX 16 × 4 ===== -->
-    <text x="360" y="454" fill="#1e1e1a" font-size="11">STEP MATRIX</text>
-    <text x="360" y="468" fill="#1e1e1a" font-size="8">4× CD4066 + 1N4148 diode-OR</text>
+    <text x="360" y="454" fill="#3a3a32" font-size="11">STEP MATRIX</text>
+    <text x="360" y="468" fill="#3a3a32" font-size="8">4× CD4066 + 1N4148 diode-OR</text>
     <rect x="340" y="478" width="220" height="320"/>
     <!-- track columns -->
     <g stroke-width="0.8">
@@ -1193,14 +1193,14 @@
       <line x1="340" y1="758" x2="555" y2="758"/>
     </g>
     <!-- track labels -->
-    <g font-size="8" fill="#1e1e1a">
+    <g font-size="8" fill="#3a3a32">
       <text x="380" y="778" text-anchor="middle">K</text>
       <text x="430" y="778" text-anchor="middle">S</text>
       <text x="480" y="778" text-anchor="middle">H</text>
       <text x="530" y="778" text-anchor="middle">A</text>
     </g>
     <!-- diode triangles · active pattern -->
-    <g fill="#1e1e1a" stroke="#1e1e1a" stroke-width="0.5">
+    <g fill="#3a3a32" stroke="#3a3a32" stroke-width="0.5">
       <!-- KICK: 1,5,9,13 → rows 0,4,8,12 -->
       <polygon points="376,484 384,484 380,492"/>
       <polygon points="376,556 384,556 380,564"/>
@@ -1232,7 +1232,7 @@
     <line x1="430" y1="794" x2="430" y2="940"/>
     <line x1="480" y1="794" x2="480" y2="980"/>
     <line x1="530" y1="794" x2="530" y2="1020"/>
-    <g font-size="8" fill="#1e1e1a">
+    <g font-size="8" fill="#3a3a32">
       <text x="380" y="888" text-anchor="middle">→KICK trg</text>
       <text x="430" y="928" text-anchor="middle">→SNR trg</text>
       <text x="480" y="968" text-anchor="middle">→HAT trg</text>
@@ -1240,90 +1240,90 @@
     </g>
 
     <!-- ===== VOICES ===== -->
-    <text x="40" y="900" fill="#1e1e1a" font-size="11">VOICES</text>
+    <text x="40" y="900" fill="#3a3a32" font-size="11">VOICES</text>
     <!-- KICK -->
     <rect x="40" y="912" width="320" height="50"/>
-    <text x="50" y="932" fill="#1e1e1a" font-size="10">KICK · 4093 osc + RC env</text>
-    <text x="50" y="950" fill="#1e1e1a" font-size="8">55→33 Hz sweep · VCA Q1 2N3904 · env 47k/1u</text>
+    <text x="50" y="932" fill="#3a3a32" font-size="10">KICK · 4093 osc + RC env</text>
+    <text x="50" y="950" fill="#3a3a32" font-size="8">55→33 Hz sweep · VCA Q1 2N3904 · env 47k/1u</text>
     <line x1="360" y1="938" x2="380" y2="938"/>
     <line x1="380" y1="938" x2="380" y2="900"/>
     <!-- SNARE -->
     <rect x="40" y="982" width="320" height="50"/>
-    <text x="50" y="1002" fill="#1e1e1a" font-size="10">SNARE · noise + BPF + env</text>
-    <text x="50" y="1020" fill="#1e1e1a" font-size="8">Q2 reverse-bias BE noise · MFB BPF 1.8 kHz · VCA</text>
+    <text x="50" y="1002" fill="#3a3a32" font-size="10">SNARE · noise + BPF + env</text>
+    <text x="50" y="1020" fill="#3a3a32" font-size="8">Q2 reverse-bias BE noise · MFB BPF 1.8 kHz · VCA</text>
     <line x1="360" y1="1008" x2="430" y2="1008"/>
     <line x1="430" y1="1008" x2="430" y2="940"/>
     <!-- HAT -->
     <rect x="40" y="1052" width="320" height="50"/>
-    <text x="50" y="1072" fill="#1e1e1a" font-size="10">HAT · 6× sq mix + HPF</text>
-    <text x="50" y="1090" fill="#1e1e1a" font-size="8">CD40106 inverter ring → XOR mix → HPF 6 kHz</text>
+    <text x="50" y="1072" fill="#3a3a32" font-size="10">HAT · 6× sq mix + HPF</text>
+    <text x="50" y="1090" fill="#3a3a32" font-size="8">CD40106 inverter ring → XOR mix → HPF 6 kHz</text>
     <line x1="360" y1="1078" x2="480" y2="1078"/>
     <line x1="480" y1="1078" x2="480" y2="980"/>
     <!-- ACID chain -->
-    <text x="40" y="1142" fill="#1e1e1a" font-size="11">ACID · VCO → VCF → VCA</text>
+    <text x="40" y="1142" fill="#3a3a32" font-size="11">ACID · VCO → VCF → VCA</text>
     <rect x="40" y="1152" width="90" height="56"/>
-    <text x="85" y="1175" text-anchor="middle" fill="#1e1e1a" font-size="10">VCO</text>
-    <text x="85" y="1192" text-anchor="middle" fill="#1e1e1a" font-size="8">CEM3340</text>
+    <text x="85" y="1175" text-anchor="middle" fill="#3a3a32" font-size="10">VCO</text>
+    <text x="85" y="1192" text-anchor="middle" fill="#3a3a32" font-size="8">CEM3340</text>
     <rect x="146" y="1152" width="90" height="56"/>
-    <text x="191" y="1175" text-anchor="middle" fill="#1e1e1a" font-size="10">VCF</text>
-    <text x="191" y="1192" text-anchor="middle" fill="#1e1e1a" font-size="8">SSM2040</text>
+    <text x="191" y="1175" text-anchor="middle" fill="#3a3a32" font-size="10">VCF</text>
+    <text x="191" y="1192" text-anchor="middle" fill="#3a3a32" font-size="8">SSM2040</text>
     <rect x="252" y="1152" width="90" height="56"/>
-    <text x="297" y="1175" text-anchor="middle" fill="#1e1e1a" font-size="10">VCA</text>
-    <text x="297" y="1192" text-anchor="middle" fill="#1e1e1a" font-size="8">LM13700</text>
+    <text x="297" y="1175" text-anchor="middle" fill="#3a3a32" font-size="10">VCA</text>
+    <text x="297" y="1192" text-anchor="middle" fill="#3a3a32" font-size="8">LM13700</text>
     <line x1="130" y1="1180" x2="146" y2="1180"/>
     <line x1="236" y1="1180" x2="252" y2="1180"/>
     <!-- env/slide -->
     <rect x="40" y="1224" width="140" height="36"/>
-    <text x="110" y="1247" fill="#1e1e1a" text-anchor="middle" font-size="10">ENV / SLIDE</text>
+    <text x="110" y="1247" fill="#3a3a32" text-anchor="middle" font-size="10">ENV / SLIDE</text>
     <line x1="180" y1="1242" x2="200" y2="1242"/>
     <line x1="200" y1="1242" x2="200" y2="1180"/>
     <line x1="200" y1="1180" x2="252" y2="1180"/>
-    <text x="200" y="1206" fill="#1e1e1a" font-size="8">cutoff CV</text>
+    <text x="200" y="1206" fill="#3a3a32" font-size="8">cutoff CV</text>
     <!-- ACID gate input -->
     <line x1="530" y1="1020" x2="530" y2="1242"/>
     <line x1="530" y1="1242" x2="180" y2="1242"/>
-    <text x="540" y="1190" fill="#1e1e1a" font-size="8">gate / accent</text>
+    <text x="540" y="1190" fill="#3a3a32" font-size="8">gate / accent</text>
     <!-- ACID out -->
     <line x1="342" y1="1180" x2="370" y2="1180"/>
-    <text x="345" y="1174" fill="#1e1e1a" font-size="8">→MIX</text>
+    <text x="345" y="1174" fill="#3a3a32" font-size="8">→MIX</text>
 
     <!-- ===== FX: DELAY + REVERB ===== -->
-    <text x="40" y="1320" fill="#1e1e1a" font-size="11">DELAY · PT2399</text>
+    <text x="40" y="1320" fill="#3a3a32" font-size="11">DELAY · PT2399</text>
     <rect x="40" y="1332" width="240" height="90"/>
-    <text x="42" y="1352" fill="#1e1e1a" font-size="8">2 V+  ·  3,4 GND</text>
-    <text x="42" y="1370" fill="#1e1e1a" font-size="8">6,7 OSC · time R 20k–50k</text>
-    <text x="42" y="1388" fill="#1e1e1a" font-size="8">14 IN+ / 15 IN−</text>
-    <text x="42" y="1406" fill="#1e1e1a" font-size="8">12 OUT+ / 13 OUT−</text>
-    <text x="160" y="1416" text-anchor="middle" fill="#1e1e1a" font-size="11">U9</text>
+    <text x="42" y="1352" fill="#3a3a32" font-size="8">2 V+  ·  3,4 GND</text>
+    <text x="42" y="1370" fill="#3a3a32" font-size="8">6,7 OSC · time R 20k–50k</text>
+    <text x="42" y="1388" fill="#3a3a32" font-size="8">14 IN+ / 15 IN−</text>
+    <text x="42" y="1406" fill="#3a3a32" font-size="8">12 OUT+ / 13 OUT−</text>
+    <text x="160" y="1416" text-anchor="middle" fill="#3a3a32" font-size="11">U9</text>
     <!-- feedback arc -->
     <path d="M 140 1332 Q 140 1306 250 1306 Q 280 1306 280 1332"/>
-    <text x="200" y="1302" fill="#1e1e1a" font-size="8">fb pot</text>
+    <text x="200" y="1302" fill="#3a3a32" font-size="8">fb pot</text>
     <!-- delay out → mix -->
     <line x1="280" y1="1376" x2="320" y2="1376"/>
     <line x1="320" y1="1376" x2="320" y2="1700"/>
-    <text x="290" y="1370" fill="#1e1e1a" font-size="8">→MIX</text>
+    <text x="290" y="1370" fill="#3a3a32" font-size="8">→MIX</text>
 
-    <text x="320" y="1320" fill="#1e1e1a" font-size="11">REVERB · spring tank</text>
+    <text x="320" y="1320" fill="#3a3a32" font-size="11">REVERB · spring tank</text>
     <rect x="320" y="1332" width="240" height="90"/>
-    <text x="322" y="1352" fill="#1e1e1a" font-size="8">drive xfmr · Q3 2N3904</text>
-    <text x="322" y="1370" fill="#1e1e1a" font-size="8">spring tank 8Ω · 3-spring</text>
-    <text x="322" y="1388" fill="#1e1e1a" font-size="8">recovery TL072 · 100×</text>
-    <text x="322" y="1406" fill="#1e1e1a" font-size="8">tone HPF 80Hz</text>
-    <text x="440" y="1416" text-anchor="middle" fill="#1e1e1a" font-size="11">U10</text>
+    <text x="322" y="1352" fill="#3a3a32" font-size="8">drive xfmr · Q3 2N3904</text>
+    <text x="322" y="1370" fill="#3a3a32" font-size="8">spring tank 8Ω · 3-spring</text>
+    <text x="322" y="1388" fill="#3a3a32" font-size="8">recovery TL072 · 100×</text>
+    <text x="322" y="1406" fill="#3a3a32" font-size="8">tone HPF 80Hz</text>
+    <text x="440" y="1416" text-anchor="middle" fill="#3a3a32" font-size="11">U10</text>
     <line x1="560" y1="1376" x2="580" y2="1376"/>
     <line x1="580" y1="1376" x2="580" y2="1710"/>
-    <text x="535" y="1370" fill="#1e1e1a" font-size="8">→MIX</text>
+    <text x="535" y="1370" fill="#3a3a32" font-size="8">→MIX</text>
 
     <!-- ===== MIXER · TL072 SUMMING ===== -->
-    <text x="40" y="1620" fill="#1e1e1a" font-size="11">MIX · TL072 SUMMING</text>
+    <text x="40" y="1620" fill="#3a3a32" font-size="11">MIX · TL072 SUMMING</text>
     <!-- op-amp triangle -->
     <polygon points="200,1652 200,1712 260,1682" fill="none"/>
-    <text x="210" y="1665" fill="#1e1e1a" font-size="9">−</text>
-    <text x="210" y="1706" fill="#1e1e1a" font-size="9">+</text>
-    <text x="220" y="1726" fill="#1e1e1a" font-size="9">U8</text>
+    <text x="210" y="1665" fill="#3a3a32" font-size="9">−</text>
+    <text x="210" y="1706" fill="#3a3a32" font-size="9">+</text>
+    <text x="220" y="1726" fill="#3a3a32" font-size="9">U8</text>
     <!-- Rf zigzag -->
     <polyline points="220,1640 226,1634 234,1646 242,1634 250,1646 258,1634 266,1646 270,1640"/>
-    <text x="230" y="1628" fill="#1e1e1a" font-size="8">Rf 47k</text>
+    <text x="230" y="1628" fill="#3a3a32" font-size="8">Rf 47k</text>
     <line x1="260" y1="1682" x2="280" y2="1682"/>
     <line x1="280" y1="1682" x2="280" y2="1640"/>
     <line x1="200" y1="1662" x2="190" y2="1662"/>
@@ -1339,7 +1339,7 @@
       <line x1="40" y1="1684" x2="200" y2="1684"/>
       <line x1="40" y1="1696" x2="200" y2="1696"/>
     </g>
-    <g font-size="8" fill="#1e1e1a">
+    <g font-size="8" fill="#3a3a32">
       <text x="26" y="1664" text-anchor="end">K 22k</text>
       <text x="26" y="1676" text-anchor="end">S 22k</text>
       <text x="26" y="1688" text-anchor="end">H 22k</text>
@@ -1368,39 +1368,39 @@
     <line x1="440" y1="1696" x2="200" y2="1696"/>
 
     <!-- ===== MASTER + OUT ===== -->
-    <text x="40" y="1820" fill="#1e1e1a" font-size="11">MASTER · TL072 + OUT JACK</text>
+    <text x="40" y="1820" fill="#3a3a32" font-size="11">MASTER · TL072 + OUT JACK</text>
     <!-- master op-amp -->
     <polygon points="40,1840 40,1894 96,1867" fill="none"/>
-    <text x="50" y="1854" fill="#1e1e1a" font-size="9">−</text>
-    <text x="50" y="1890" fill="#1e1e1a" font-size="9">+</text>
-    <text x="60" y="1908" fill="#1e1e1a" font-size="9">U11</text>
+    <text x="50" y="1854" fill="#3a3a32" font-size="9">−</text>
+    <text x="50" y="1890" fill="#3a3a32" font-size="9">+</text>
+    <text x="60" y="1908" fill="#3a3a32" font-size="9">U11</text>
     <line x1="280" y1="1682" x2="280" y2="1854"/>
     <line x1="280" y1="1854" x2="40" y2="1854"/>
-    <text x="115" y="1849" fill="#1e1e1a" font-size="8">from Σ</text>
+    <text x="115" y="1849" fill="#3a3a32" font-size="8">from Σ</text>
     <line x1="96" y1="1867" x2="130" y2="1867"/>
     <!-- AC out cap -->
     <line x1="130" y1="1859" x2="130" y2="1875"/>
     <line x1="138" y1="1859" x2="138" y2="1875"/>
-    <text x="133" y="1850" fill="#1e1e1a" font-size="8">10uF</text>
+    <text x="133" y="1850" fill="#3a3a32" font-size="8">10uF</text>
     <line x1="138" y1="1867" x2="180" y2="1867"/>
     <!-- jack symbol -->
     <circle cx="195" cy="1867" r="9"/>
-    <text x="215" y="1872" fill="#1e1e1a" font-size="11">OUT</text>
+    <text x="215" y="1872" fill="#3a3a32" font-size="11">OUT</text>
     <line x1="195" y1="1876" x2="195" y2="1896"/>
     <path d="M186 1896 L204 1896 M188 1901 L202 1901 M191 1906 L197 1906"/>
 
     <!-- ===== NOTES ===== -->
-    <text x="40" y="1990" fill="#1e1e1a" font-size="10">notes:</text>
-    <text x="40" y="2008" fill="#1e1e1a" font-size="9">— each IC bypassed with 100nF V+/GND</text>
-    <text x="40" y="2024" fill="#1e1e1a" font-size="9">— CD4066 inputs are per-cell panel SPST</text>
-    <text x="40" y="2040" fill="#1e1e1a" font-size="9">— ACID pitch CV: per-step pot ladder → 3340 1V/oct</text>
-    <text x="40" y="2056" fill="#1e1e1a" font-size="9">— accent: extra current → VCF cutoff via Q4</text>
-    <text x="40" y="2072" fill="#1e1e1a" font-size="9">— BPM 60–180 → CT/RT for ~16 Hz max</text>
-    <text x="40" y="2088" fill="#1e1e1a" font-size="9">— PT2399 time pot 20k↔50k ≈ 30–600 ms</text>
+    <text x="40" y="1990" fill="#3a3a32" font-size="10">notes:</text>
+    <text x="40" y="2008" fill="#3a3a32" font-size="9">— each IC bypassed with 100nF V+/GND</text>
+    <text x="40" y="2024" fill="#3a3a32" font-size="9">— CD4066 inputs are per-cell panel SPST</text>
+    <text x="40" y="2040" fill="#3a3a32" font-size="9">— ACID pitch CV: per-step pot ladder → 3340 1V/oct</text>
+    <text x="40" y="2056" fill="#3a3a32" font-size="9">— accent: extra current → VCF cutoff via Q4</text>
+    <text x="40" y="2072" fill="#3a3a32" font-size="9">— BPM 60–180 → CT/RT for ~16 Hz max</text>
+    <text x="40" y="2088" fill="#3a3a32" font-size="9">— PT2399 time pot 20k↔50k ≈ 30–600 ms</text>
 
     <!-- GND rail at bottom -->
     <line x1="30" y1="2150" x2="570" y2="2150" stroke-dasharray="2 3"/>
-    <text x="574" y="2154" fill="#1e1e1a" font-size="9">GND</text>
+    <text x="574" y="2154" fill="#3a3a32" font-size="9">GND</text>
   </g>
 </svg>
 <canvas id="bgScope" aria-hidden="true"></canvas>
