@@ -879,16 +879,4 @@
   .btn.primary:hover{ color: #ff7d36; }
   .btn.ghost:hover{ color: var(--ink); }
 
-  .foot-meta{
-    display:flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-    font-family:'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-    color: var(--ink-dim);
-    padding-top: 1.6rem;
-    border-top: 1px solid var(--line);
-  }
-
   ::selection{ background: var(--signal); color: #0E0E0D; }
