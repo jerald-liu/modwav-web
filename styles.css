@@ -378,7 +378,7 @@
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
-    opacity: 0.85;
+    opacity: 0.6;
     --trace: #6e2e2e;
   }
   .circuit-svg{
