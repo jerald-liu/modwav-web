@@ -1458,7 +1458,7 @@ const io = new IntersectionObserver((entries)=>{
 }, { threshold: 0.15 });
 revealEls.forEach(el=>io.observe(el));
 
-document.getElementById('year').textContent = new Date().getFullYear();
+document.getElementById('year')?.replaceChildren(document.createTextNode(new Date().getFullYear()));
 
 /* ---------------- modal open/close ---------------- */
 const synthBar = document.getElementById('synthBar');
