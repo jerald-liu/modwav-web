@@ -498,6 +498,12 @@
   }
   .page-len-btn:disabled{ opacity: 0.3; cursor: default; }
   .page-len-btn:focus{ outline: none; }
+  /* queued mid-playback, waiting on the next bar boundary */
+  .page-len-btn.pending{
+    color: var(--phosphor);
+    border-color: var(--phosphor);
+    box-shadow: 0 0 4px rgba(143,255,196,0.5);
+  }
   .page-dots{ display: flex; align-items: center; gap: 7px; }
   .page-dot{
     width: 9px; height: 9px;

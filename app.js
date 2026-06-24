@@ -48,7 +48,9 @@ let fmPopupStepIdx = -1;
 function openFMPopup(stepIdx, anchorEl){
   if(acidInstrument !== 'fm') return;
   fmPopupStepIdx = stepIdx;
-  fmPopupStep.textContent = stepIdx + 1;
+  const bar = Math.floor(stepIdx / STEPS) + 1;
+  const stepInBar = (stepIdx % STEPS) + 1;
+  fmPopupStep.textContent = `bar ${bar} · step ${stepInBar}`;
   fmRatioInput.value = FM_RATIO[stepIdx];
   fmIndexInput.value = FM_INDEX[stepIdx];
   fmRatioVal.textContent = (+FM_RATIO[stepIdx]).toFixed(2);
@@ -394,6 +396,10 @@ TRACKS.forEach((track, ti)=>{
 const PLOCK_ARRAYS = () => [pattern.kick, pattern.snare, pattern.hat, pattern.acid, ACID_NOTES, ACID_ACCENT, FM_RATIO, FM_INDEX];
 let miniGridBar = 0;   // which bar the bottom mini-grid currently displays
 let playingBar = -1;   // bar the scheduler is currently on (-1 when stopped)
+// While the scheduler is running, ÷2/×2 queue here and the scheduler applies
+// the change at the next bar boundary — so the currently audible bar is never
+// cut off and there's always a next bar to land on.
+let pendingLengthChange = null; // 'halve' | 'double' | null
 
 const pageDotsEl = document.getElementById('pageDots');
 const halveBtn = document.getElementById('halveBtn');
@@ -457,20 +463,51 @@ function setCurrentBar(b){
   renderPage();
 }
 
-function doubleLength(){
+// _Now helpers actually mutate the per-step arrays; the public ÷2/×2 handlers
+// either call them immediately (stopped) or queue them (playing).
+function doubleLengthNow(){
   if(numBars >= MAX_BARS) return;
   // duplicate every per-step array in place: [bar1] -> [bar1, copy-of-bar1]
   PLOCK_ARRAYS().forEach(a=>{ const n = a.length; for(let k=0;k<n;k++) a.push(a[k]); });
   numBars *= 2;
   renderPage();
 }
-
-function halveLength(){
+function halveLengthNow(){
   if(numBars <= 1) return;
   PLOCK_ARRAYS().forEach(a=>{ a.length = a.length / 2; });
   numBars /= 2;
   if(currentBar >= numBars) currentBar = numBars - 1;
   renderPage();
+}
+
+function setPendingLengthChange(action){
+  pendingLengthChange = action;
+  halveBtn.classList.toggle('pending', action === 'halve');
+  doubleBtn.classList.toggle('pending', action === 'double');
+}
+function clearPendingLengthChange(){
+  if(!pendingLengthChange) return;
+  pendingLengthChange = null;
+  halveBtn.classList.remove('pending');
+  doubleBtn.classList.remove('pending');
+}
+// Called by the scheduler when currentStep crosses into a new bar.
+function applyPendingLengthChange(){
+  const action = pendingLengthChange;
+  clearPendingLengthChange();
+  if(action === 'double') doubleLengthNow();
+  else if(action === 'halve') halveLengthNow();
+}
+
+function doubleLength(){
+  if(numBars >= MAX_BARS) return;
+  if(running){ setPendingLengthChange('double'); return; }
+  doubleLengthNow();
+}
+function halveLength(){
+  if(numBars <= 1) return;
+  if(running){ setPendingLengthChange('halve'); return; }
+  halveLengthNow();
 }
 
 halveBtn.addEventListener('click', halveLength);
@@ -888,7 +925,14 @@ function schedulerLoop(){
   while(nextStepTime < ctx.currentTime + SCHEDULE_AHEAD){
     scheduleStep(currentStep, nextStepTime);
     nextStepTime += STEP_SECONDS;
-    currentStep = (currentStep + 1) % totalSteps();
+    // increment first, then if we just crossed into a new bar, apply any
+    // pending length change — guarantees the audible bar plays out fully and
+    // the final modulo lands us on a step that exists in the new sequence.
+    currentStep = currentStep + 1;
+    if(pendingLengthChange && currentStep % STEPS === 0){
+      applyPendingLengthChange();
+    }
+    currentStep = currentStep % totalSteps();
   }
   schedulerTimer = setTimeout(schedulerLoop, 25);
 }
@@ -906,6 +950,7 @@ function stopSequencer(){
   playingBar = -1;
   updatePlayingDots();
   renderMiniGrid(currentBar); // mini-grid returns to the edited page
+  clearPendingLengthChange(); // a queued change is canceled when you stop
 }
 
 function setPlayingState(isPlaying){
