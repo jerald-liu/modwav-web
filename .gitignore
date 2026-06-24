@@ -9,3 +9,11 @@
 
 # misc
 *.log
+
+# dev-only test tooling (not part of the shipped site)
+node_modules/
+test-results/
+playwright-report/
+
+# local Claude Code tooling
+.claude/

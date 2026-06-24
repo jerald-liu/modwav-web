@@ -25,6 +25,23 @@ python3 -m http.server 8000
 
 `file://` works for most things but Web Audio is happier over `http://`.
 
+## Smoke tests
+
+Dev-only [Playwright](https://playwright.dev) smoke tests guard against regressions
+(console errors on load, the bottom-bar grid + oscilloscope not rendering, the
+sequencer modal not opening). They run at 375px (mobile) and 1280px (desktop) since
+the 720px breakpoint flips layout. **These deps live in `devDependencies` only — the
+shipped `index.html` stays zero-dependency.**
+
+```sh
+npm install                      # one-time
+npx playwright install chromium  # one-time, fetches the browser
+npm test
+```
+
+The config auto-starts `python3 -m http.server` and tears it down. Screenshots
+(landing + open modal, both viewports) land in `test-results/`.
+
 ## Deploy
 
 Pushes to `main` auto-deploy via GitHub Pages (source: `main` / root). Wait ~1 minute after pushing.
