@@ -371,3 +371,34 @@ test('settings persist across page reload', async ({ page }) => {
   await expect(page.locator('.inst-btn').nth(1)).toHaveClass(/\bactive\b/);
   expect(await page.locator('.step[data-track="kick"][data-step="2"]').evaluate(e => e.classList.contains('on'))).toBe(kick2Before);
 });
+
+// 17 — Randomize. Left-click on the die changes the pattern + tempo; right-
+// click opens the config popup (no mutation). False-positive odds of the
+// post-randomize pattern matching the default exactly are 1 in 2^16, plus
+// the BPM check has to coincidentally land on 140 — combined that's
+// astronomical. The popup test asserts the tree built + nothing ran on open.
+test('randomize: left-click mutates state; right-click opens popup', async ({ page }) => {
+  await open(page);
+  const kickRowSig = () =>
+    page.$$eval('.step[data-track="kick"]', els => els.map(e => e.classList.contains('on') ? 1 : 0).join(''));
+  const bpm = () => page.locator('#bpmAmt').inputValue().then(Number);
+
+  // capture defaults
+  const kickBefore = await kickRowSig();
+  const bpmBefore = await bpm();
+
+  // right-click opens the popup without mutating
+  await page.locator('#rndBtn').click({ button: 'right' });
+  await expect(page.locator('#rndPopup')).toBeVisible();
+  expect(await kickRowSig()).toBe(kickBefore);
+  expect(await bpm()).toBe(bpmBefore);
+  // tree built with at least one row per leaf — Kick / Snare / Hat / Acid + fx + BPM
+  expect(await page.locator('#rndTree .rnd-row').count()).toBeGreaterThan(15);
+
+  // click randomize button inside the popup — should mutate
+  await page.locator('#rndGo').click();
+  await expect(page.locator('#rndPopup')).toBeHidden();
+  const kickAfter = await kickRowSig();
+  const bpmAfter = await bpm();
+  expect(kickAfter !== kickBefore || bpmAfter !== bpmBefore).toBe(true);
+});

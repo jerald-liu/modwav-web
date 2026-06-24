@@ -440,16 +440,24 @@
     gap: 0.45rem 0.6rem;
     margin-bottom: 0.5rem;
   }
-  .seq-toolbar .unmute-all-btn{ justify-self: end; margin-right: 26px; }
+  /* unmute + randomize sit together in the toolbar's first grid cell, right-
+     aligned and offset so the unmute icon lands above kick's M column. */
+  .seq-toolbar .toolbar-left{
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-right: 26px;
+  }
   @media (max-width: 720px){
     .seq-toolbar{
       grid-template-columns: 110px 1fr 64px;
       gap: 0.35rem 0.4rem;
     }
-    .seq-toolbar .unmute-all-btn{
-      width: 18px; height: 18px; font-size: 0.8rem;
-      margin-right: 21px; /* S width (18) + gap (3) — keep icon above M */
-    }
+    .seq-toolbar .toolbar-left{ margin-right: 21px; gap: 3px; }
+    .seq-toolbar .unmute-all-btn{ width: 18px; height: 18px; font-size: 0.8rem; }
+    .seq-toolbar .rnd-btn{ width: 18px; height: 18px; }
+    .seq-toolbar .rnd-btn svg{ width: 12px; height: 12px; }
   }
   .unmute-all-btn{
     font-family: 'JetBrains Mono', monospace;
@@ -472,6 +480,70 @@
     .unmute-all-btn:hover{ background: #c54a3a; color: #0E0E0D; }
   }
   .unmute-all-btn:focus{ outline: none; }
+
+  /* randomize die button — outlined SVG, lines + filled dots, no background */
+  .rnd-btn{
+    width: 22px; height: 22px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--ink-dim);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  @media (hover: hover){
+    .rnd-btn:hover{ border-color: var(--ink); color: var(--ink); }
+  }
+  .rnd-btn:focus{ outline: none; }
+  .rnd-btn svg{ display: block; }
+
+  /* randomize popup: same .fm-popup shell, extended for the checkbox tree */
+  .rnd-popup{ width: 260px; }
+  .rnd-tree{
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: 0.7rem;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .rnd-row{
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.1rem 0;
+    color: var(--ink-dim);
+    cursor: pointer;
+  }
+  .rnd-row:hover{ color: var(--ink); }
+  .rnd-row input[type=checkbox]{
+    accent-color: var(--phosphor);
+    cursor: pointer;
+    margin: 0;
+    flex: none;
+  }
+  .rnd-go{
+    margin-top: 0.6rem;
+    width: 100%;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+    padding: 0.45rem 0.6rem;
+    background: var(--phosphor);
+    color: #0E0E0D;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  @media (hover: hover){
+    .rnd-go:hover{ filter: brightness(1.05); }
+  }
+  .rnd-go:focus{ outline: none; }
 
   /* pages: ÷2 / ×2 + page dots, in the toolbar's steps column */
   .page-ctrl{

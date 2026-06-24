@@ -96,6 +96,7 @@ never a line number (they drift). Fuzzy → banner:
 - modal open/close → `app.js` `modal open/close`; FM popup → `FM per-step popup`; FX bus popups (delay/reverb internals via right-click on the FX BUS knobs) → `FX bus popups`; waveform/`resizeCanvas` → `oscilloscope draw`
 - nav fade on scroll → `app.js` `nav scroll-fade`
 - save / load to localStorage → `app.js` `state persistence (localStorage)`
+- randomize feature (die button + tree popup) → `app.js` `randomize`; mask is ephemeral (defaults to everything on); excludes numBars/mute/solo by spec
 - bottom-bar CSS → `styles.css` `floating bottom bar`; modal CSS → `synth modal` / `synth panel`; page CSS → `hero` / `nav` / `sections` / `layout shells`
 
 **Keep banners + their code stable (token-cost, not style):** don't rename/churn banners or scatter

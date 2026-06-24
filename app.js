@@ -187,6 +187,7 @@ let reverbReturn = null;
 const trackGains = {};
 const trackDelaySends = {};
 const trackReverbSends = {};
+const trackSendKnobs = {}; // { [id]: { delay, reverb } } — set during the track-row build; used by randomize
 
 const TRACK_SEND_DEFAULTS = {
   kick:  { delay: 0,  reverb: 8  },
@@ -562,6 +563,7 @@ TRACKS.forEach((track, ti)=>{
   }, `${track.label} → reverb send`);
   sends.appendChild(delayKnob);
   sends.appendChild(reverbKnob);
+  trackSendKnobs[track.id] = { delay: delayKnob, reverb: reverbKnob };
   seqEl.appendChild(sends);
 });
 
@@ -768,6 +770,7 @@ function makeKnob(value, onInput, title){
     knob.style.setProperty('--knob-ang', (-135 + (val / 100) * 270).toFixed(1) + 'deg');
     knob.setAttribute('aria-valuenow', String(val));
   }
+  knob.setValue = setVal;            // expose so randomize/etc. can drive the angle
   setVal(val);
   let dragging = false, startY = 0, startVal = 0;
   knob.addEventListener('pointerdown', (e)=>{
@@ -1723,6 +1726,192 @@ async function runExport(){
   }
 }
 exportBtn.addEventListener('click', runExport);
+
+/* ---------------- randomize ---------------- */
+// Configurable randomize. The tree below mirrors the persistence schema (minus
+// numBars/mute/solo and the three items the user opted out of: ACID_ACCENT,
+// acidInstrument, FX-bus return levels). Leaves carry an `apply` fn that
+// mutates the corresponding state. Parents are visual + cascade-toggle nodes.
+// Mask is ephemeral (not persisted). Right-click the die opens the popup;
+// left-click runs immediately with the current mask.
+
+const _ri = (lo, hi) => Math.floor(lo + Math.random() * (hi - lo + 1));     // inclusive int
+const _rf = (lo, hi) => lo + Math.random() * (hi - lo);                     // float
+const _rp = (arr) => arr[Math.floor(Math.random() * arr.length)];           // pick
+const _rd = (p) => Math.random() < p ? 1 : 0;                               // 0/1 with density
+
+// Densities tuned for musicality — uniform 0.5 makes drums sound noisy.
+const TRACK_DENSITY = { kick: 0.4, snare: 0.22, hat: 0.55, acid: 0.45 };
+const FM_RATIO_CHOICES = [0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8];
+
+function rndSteps(id){
+  const d = TRACK_DENSITY[id] ?? 0.4;
+  const n = totalSteps();
+  for(let i = 0; i < n; i++) pattern[id][i] = _rd(d);
+}
+function rndPitch(){
+  const n = totalSteps();
+  for(let i = 0; i < n; i++) ACID_NOTES[i] = _ri(ACID_NOTE_MIN, ACID_NOTE_MAX);
+}
+function rndFmRatio(){
+  const n = totalSteps();
+  for(let i = 0; i < n; i++) FM_RATIO[i] = _rp(FM_RATIO_CHOICES);
+}
+function rndFmIndex(){
+  const n = totalSteps();
+  for(let i = 0; i < n; i++) FM_INDEX[i] = _ri(0, 80) * 5;                  // 0–400 step 5
+}
+function rndSend(id, kind){
+  const v = _ri(0, 100);
+  trackSendValues[id][kind] = v;
+  const node = kind === 'delay' ? trackDelaySends[id] : trackReverbSends[id];
+  if(node) node.gain.value = v / 100;
+  trackSendKnobs[id]?.[kind]?.setValue(v);
+}
+function rndFxDelay(){
+  delayFbValue  = _ri(0, 95);
+  delayDivIndex = _ri(0, DELAY_DIVS.length - 1);
+  delayTone     = _ri(5, 120) * 100;                                        // 500–12000 step 100
+  if(delayFbRef)   delayFbRef.gain.value = delayFbValue / 100;
+  if(delayDampRef) delayDampRef.frequency.setTargetAtTime(delayTone, ctx?.currentTime || 0, 0.03);
+  if(delayNodeRef && ctx) delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * delayMultiplier(), ctx.currentTime, 0.03);
+}
+function rndFxReverb(){
+  reverbSize  = Math.round(_rf(0.5, 5.0) * 10) / 10;
+  reverbDecay = Math.round(_rf(1.0, 5.0) * 10) / 10;
+  if(reverbConvolverRef && ctx) reverbConvolverRef.buffer = makeImpulseResponse(ctx, reverbSize, reverbDecay);
+}
+function rndBpm(){
+  setTempo(_ri(60, 180));
+}
+
+const RND_TREE = [
+  { id: 'all', label: 'ALL', children: [
+    { id: 'tracks', label: 'tracks', children: TRACKS.map(t => ({
+      id: t.id, label: t.label.charAt(0) + t.label.slice(1).toLowerCase(),
+      children: [
+        { id: `${t.id}.steps`,  label: 'steps',       apply: () => rndSteps(t.id) },
+        ...(t.id === 'acid' ? [
+          { id: 'acid.pitch',    label: 'pitch',      apply: rndPitch },
+          { id: 'acid.fmRatio',  label: 'FM ratio',   apply: rndFmRatio },
+          { id: 'acid.fmIndex',  label: 'FM index',   apply: rndFmIndex },
+        ] : []),
+        { id: `${t.id}.delay`,  label: 'delay send',  apply: () => rndSend(t.id, 'delay') },
+        { id: `${t.id}.reverb`, label: 'reverb send', apply: () => rndSend(t.id, 'reverb') },
+      ],
+    }))},
+    { id: 'fx', label: 'fx bus', children: [
+      { id: 'fx.delay',  label: 'delay',  apply: rndFxDelay },
+      { id: 'fx.reverb', label: 'reverb', apply: rndFxReverb },
+    ]},
+    { id: 'bpm', label: 'BPM', apply: rndBpm },
+  ]},
+];
+
+// Flat list of leaf nodes for fast iteration during randomize().
+const _leaves = [];
+(function collectLeaves(nodes){
+  nodes.forEach(n => {
+    if(n.children) collectLeaves(n.children);
+    else _leaves.push(n);
+  });
+})(RND_TREE);
+
+// Mask shape: { [leafId]: boolean }. Defaults: every leaf on.
+const defaultMask = () => Object.fromEntries(_leaves.map(l => [l.id, true]));
+let _rndMask = defaultMask();
+
+function runRandomize(){
+  _leaves.forEach(leaf => { if(_rndMask[leaf.id]) leaf.apply(); });
+  // Reflect everything that changed into the DOM + saved state.
+  renderPage();
+  renderMiniGrid(miniGridBar);
+  saveStateSoon();
+}
+
+/* ---- randomize popup (tree of checkboxes) ---- */
+const rndBtn = document.getElementById('rndBtn');
+const rndPopup = document.getElementById('rndPopup');
+const rndTreeEl = document.getElementById('rndTree');
+
+// Build the checkbox tree from RND_TREE. Each row stores a flat list of
+// descendant leaf ids on the input element via dataset; cascade toggling is
+// just "set all descendant leaves to this row's checked state, then re-sync
+// every parent's visual state".
+function buildRndTree(){
+  const allInputs = []; // [{ input, leafIds }]
+  function build(nodes, depth){
+    nodes.forEach(node => {
+      const row = document.createElement('label');
+      row.className = 'rnd-row';
+      row.style.paddingLeft = (depth * 14) + 'px';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.dataset.rnd = node.id;
+      const span = document.createElement('span');
+      span.textContent = node.label;
+      row.append(input, span);
+      rndTreeEl.appendChild(row);
+      // collect leaf ids beneath this node (for cascade); a leaf node owns itself.
+      const leafIds = [];
+      if(node.children){
+        const collect = (n) => n.children ? n.children.forEach(collect) : leafIds.push(n.id);
+        collect(node);
+      } else {
+        leafIds.push(node.id);
+      }
+      allInputs.push({ input, leafIds });
+      input.addEventListener('change', () => {
+        // Set every descendant leaf in the mask to this row's new checked state,
+        // then re-sync every checkbox in the tree from the mask.
+        leafIds.forEach(id => { _rndMask[id] = input.checked; });
+        syncTreeChecks();
+      });
+      if(node.children) build(node.children, depth + 1);
+    });
+  }
+  function syncTreeChecks(){
+    allInputs.forEach(({ input, leafIds }) => {
+      const on = leafIds.every(id => _rndMask[id]);
+      const off = leafIds.every(id => !_rndMask[id]);
+      input.checked = on;
+      input.indeterminate = !on && !off;
+    });
+  }
+  build(RND_TREE, 0);
+  syncTreeChecks();
+}
+buildRndTree();
+
+function openRndPopup(anchorEl){
+  rndPopup.hidden = false;
+  positionPopupAbove(rndPopup, anchorEl);
+}
+function closeRndPopup(){ rndPopup.hidden = true; }
+document.getElementById('rndClose').addEventListener('click', closeRndPopup);
+document.getElementById('rndGo').addEventListener('click', () => { runRandomize(); closeRndPopup(); });
+
+// Left-click = randomize now. Right-click / long-press (touch) = open popup.
+rndBtn.addEventListener('click', runRandomize);
+rndBtn.addEventListener('contextmenu', (e) => { e.preventDefault(); openRndPopup(rndBtn); });
+{
+  let lpTimer = null;
+  rndBtn.addEventListener('pointerdown', (e) => {
+    if(e.pointerType === 'touch') lpTimer = setTimeout(() => { openRndPopup(rndBtn); lpTimer = null; }, 450);
+  });
+  const clearLP = () => { if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; } };
+  rndBtn.addEventListener('pointerup', clearLP);
+  rndBtn.addEventListener('pointercancel', clearLP);
+  rndBtn.addEventListener('pointermove', clearLP);
+}
+// outside-click closes the rnd popup; clicks on the die itself re-open via
+// contextmenu/long-press, so don't treat those as outside.
+document.addEventListener('pointerdown', (e) => {
+  if(rndPopup.hidden) return;
+  if(rndPopup.contains(e.target)) return;
+  if(e.target.closest && e.target.closest('#rndBtn')) return;
+  closeRndPopup();
+}, true);
 
 /* ---- post-load DOM sync ---- */
 // loadState() ran early to mutate state vars before the DOM builders read them
