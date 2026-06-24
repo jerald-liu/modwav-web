@@ -951,8 +951,31 @@
     font-weight: 400;
     letter-spacing: 0;
     line-height: 1;
-    margin: 0 0 1.6rem;
+    margin: 0 0 1.2rem;
   }
+  .events{
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+  }
+  .events li{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--ink);
+    padding: 0.6rem 0;
+    border-top: 1px solid var(--line);
+  }
+  .events li:last-child{ border-bottom: 1px solid var(--line); }
+  .events-empty{
+    display: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.86rem;
+    color: var(--ink-dim);
+    margin: 0 0 1.8rem;
+  }
+  .events:empty + .events-empty{ display: block; }
+  .events-empty a{ color: var(--signal); text-decoration: none; }
+  .events-empty a:hover{ text-decoration: underline; }
   .cta-row{
     display:flex;
     gap: 1rem;
@@ -1021,6 +1044,8 @@
 <!-- ================= FOOTER / CTA ================= -->
 <footer>
   <p class="big">Come play.</p>
+  <ul class="events" id="events"></ul>
+  <p class="events-empty">no events yet, reach out to <a href="mailto:modwav.sf@gmail.com?subject=Mod.wav%20—%20host%20us">modwav.sf@gmail.com</a> to host us</p>
   <div class="cta-row">
     <a class="btn primary" href="mailto:modwav.sf@gmail.com?subject=Mod.wav%20—%20Come%20play">Get in touch</a>
     <a class="btn ghost" href="#top">Back to top</a>
