@@ -1927,6 +1927,7 @@ function setPlayingState(isPlaying){
     statusText.textContent = 'PLAYING';
     if(droneNodes[1]) droneNodes[1].gain.linearRampToValueAtTime(0.04, ctx.currentTime + 1.2);
     startSequencer();
+    cancelMarqueeIdle();
   } else {
     toggleBtn.textContent = '▶';
     toggleBtn.title = 'Play';
@@ -1939,8 +1940,79 @@ function setPlayingState(isPlaying){
     statusText.textContent = 'STOPPED';
     if(droneNodes[1]) droneNodes[1].gain.linearRampToValueAtTime(0.0, ctx.currentTime + 0.6);
     stopSequencer();
+    scheduleMarqueeIdle();
   }
 }
+
+/* ---- idle MOD.WAV marquee on the bottom-bar grid ---- */
+const MARQUEE_GLYPHS = {
+  M: [[1,0,0,0,1],[1,1,0,1,1],[1,0,1,0,1],[1,0,0,0,1]],
+  O: [[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+  D: [[1,1,1,0,0],[1,0,0,1,0],[1,0,0,1,0],[1,1,1,0,0]],
+  '.': [[0],[0],[0],[1]],
+  W: [[1,0,0,0,1],[1,0,1,0,1],[1,0,1,0,1],[0,1,0,1,0]],
+  A: [[0,1,1,1,0],[1,0,0,0,1],[1,1,1,1,1],[1,0,0,0,1]],
+  V: [[1,0,0,0,1],[1,0,0,0,1],[0,1,0,1,0],[0,0,1,0,0]],
+};
+function buildMarquee(text){
+  const rows = [[],[],[],[]];
+  const blank = w => { for(let r=0;r<4;r++) for(let i=0;i<w;i++) rows[r].push(0); };
+  blank(16);
+  for(const ch of text){
+    if(ch === ' '){ blank(2); continue; }
+    const g = MARQUEE_GLYPHS[ch];
+    if(!g) continue;
+    for(let r=0;r<4;r++) g[r].forEach(v=>rows[r].push(v));
+    blank(1);
+  }
+  blank(16);
+  return rows;
+}
+const MARQUEE = buildMarquee('MOD.WAV');
+let marqueeOffset = 0;
+let marqueeTimer = null;
+let marqueeIdleTimer = null;
+function renderMarqueeFrame(){
+  const rowEls = document.querySelectorAll('#barSeq .bar-seq-row');
+  for(let r=0;r<4;r++){
+    const steps = rowEls[r].querySelectorAll('.bar-step');
+    for(let c=0;c<16;c++){
+      const idx = (marqueeOffset + c) % MARQUEE[r].length;
+      steps[c].classList.toggle('on', !!MARQUEE[r][idx]);
+    }
+  }
+}
+function restoreBarFromPattern(){
+  document.querySelectorAll('#barSeq .bar-step').forEach(el=>{
+    const id = el.dataset.track;
+    const s = +el.dataset.step;
+    el.classList.toggle('on', !!pattern[id][s]);
+  });
+}
+function startMarquee(){
+  if(marqueeTimer || running) return;
+  marqueeOffset = 0;
+  marqueeTimer = setInterval(()=>{
+    renderMarqueeFrame();
+    marqueeOffset = (marqueeOffset + 1) % MARQUEE[0].length;
+  }, 140);
+}
+function stopMarquee(){
+  if(!marqueeTimer) return;
+  clearInterval(marqueeTimer);
+  marqueeTimer = null;
+  restoreBarFromPattern();
+}
+function scheduleMarqueeIdle(){
+  clearTimeout(marqueeIdleTimer);
+  marqueeIdleTimer = setTimeout(startMarquee, 10000);
+}
+function cancelMarqueeIdle(){
+  clearTimeout(marqueeIdleTimer);
+  marqueeIdleTimer = null;
+  stopMarquee();
+}
+scheduleMarqueeIdle();
 
 async function handleToggle(){
   ensureAudio();
