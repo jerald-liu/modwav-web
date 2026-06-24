@@ -309,10 +309,13 @@ TRACKS.forEach((track, ti)=>{
         e.preventDefault();
       });
       btn.addEventListener('pointerup', (e)=>{
+        // pointerdown only sets dragging for a left press, so a right-click
+        // (contextmenu / FM popup) leaves it false — don't let pointerup toggle.
+        const wasLeftPress = dragging;
         if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer = null; }
         dragging = false;
         try { btn.releasePointerCapture(e.pointerId); } catch(_){}
-        if(!moved && !longPressed) toggleStep();
+        if(wasLeftPress && !moved && !longPressed) toggleStep();
       });
       btn.addEventListener('pointercancel', ()=>{
         if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer = null; }

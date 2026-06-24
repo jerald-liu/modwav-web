@@ -27,11 +27,18 @@ python3 -m http.server 8000
 
 ## Smoke tests
 
-Dev-only [Playwright](https://playwright.dev) smoke tests guard against regressions
-(console errors on load, the bottom-bar grid + oscilloscope not rendering, the
-sequencer modal not opening). They run at 375px (mobile) and 1280px (desktop) since
-the 720px breakpoint flips layout. **These deps live in `devDependencies` only — the
-shipped `index.html` stays zero-dependency.**
+Dev-only [Playwright](https://playwright.dev) smoke tests guard against regressions.
+Two specs:
+- `tests/smoke.spec.js` — load/render: console errors on load, the bottom-bar grid +
+  oscilloscope rendering, the sequencer modal opening. Runs at 375px (mobile) and
+  1280px (desktop) since the 720px breakpoint flips layout.
+- `tests/sequencer.spec.js` — sequencer interactions, each guarding a specific snag
+  from development: step toggle + bottom-bar mirror, acid pitch-drag axis lock
+  (tap/vertical/horizontal), right-click never toggling a step, FM-popup gating,
+  spacebar transport (no page scroll, ignored while editing BPM), play-state sync,
+  mute/solo/unmute-all, and BPM clamping.
+
+**These deps live in `devDependencies` only — the shipped site stays zero-dependency.**
 
 ```sh
 npm install                      # one-time
