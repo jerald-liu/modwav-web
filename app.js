@@ -416,7 +416,10 @@ function renderMiniGrid(bar){
   });
 }
 
-// re-sync the 16 visual modal buttons (+ acid note labels) to currentBar
+// re-sync the 16 visual modal buttons (+ acid note labels) to currentBar.
+// Intentionally does NOT touch the mini-grid: that one follows the last-played
+// bar at all times (during play it tracks playingBar; when stopped it stays
+// where it was).
 function renderPage(){
   document.querySelectorAll('#seq .step').forEach(btn=>{
     const track = btn.dataset.track;
@@ -429,7 +432,6 @@ function renderPage(){
     }
   });
   renderPageDots();
-  if(!running) renderMiniGrid(currentBar);
 }
 
 function renderPageDots(){
@@ -477,6 +479,13 @@ function halveLengthNow(){
   PLOCK_ARRAYS().forEach(a=>{ a.length = a.length / 2; });
   numBars /= 2;
   if(currentBar >= numBars) currentBar = numBars - 1;
+  // If the bar the mini-grid was showing got removed, snap it to the last
+  // valid bar and repaint — that's the only case where halve changes what
+  // the mini-grid should display.
+  if(miniGridBar >= numBars){
+    miniGridBar = numBars - 1;
+    renderMiniGrid(miniGridBar);
+  }
   renderPage();
 }
 
@@ -949,7 +958,7 @@ function stopSequencer(){
   document.querySelectorAll('.bar-step.playhead').forEach(el=>el.classList.remove('playhead'));
   playingBar = -1;
   updatePlayingDots();
-  renderMiniGrid(currentBar); // mini-grid returns to the edited page
+  // mini-grid stays on the last-played bar — no re-render
   clearPendingLengthChange(); // a queued change is canceled when you stop
 }
 
@@ -1023,8 +1032,9 @@ function renderMarqueeFrame(){
   }
 }
 function restoreBarFromPattern(){
-  // marquee only runs while stopped, so restore the edited page
-  renderMiniGrid(currentBar);
+  // marquee only runs while stopped — restore the bar the mini-grid was on
+  // before the marquee overwrote it (last-played bar, or bar 0 if never played).
+  renderMiniGrid(miniGridBar);
 }
 function startMarquee(){
   if(marqueeTimer || running) return;
