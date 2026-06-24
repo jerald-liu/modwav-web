@@ -74,6 +74,34 @@ Known intent (not yet built):
 - **Circuit background** is a hand-placed inline `<svg>` in `index.html` (coordinates are manual).
   Editing it means moving real numbers; there's no generator.
 
+## Navigating the code (read before searching)
+
+`app.js` and `styles.css` are sectioned with `/* ---- name ---- */` banners. **Grep the banners
+for a live table of contents instead of scanning a whole file** — e.g. `grep -n '/\* -' app.js`
+gives every section with current line numbers (self-updating, never stale). Then read just that
+section's ~80-line region.
+
+Concept → banner (search the banner string, not a line number — line numbers drift):
+- Stem / mix / MIDI export, WAV/ZIP/CRC32 codecs → `app.js` `export: 4-bar stems + mix + MIDI`
+- Step toggling, acid pitch-drag, mute/solo, pattern state → `app.js` `step sequencer`
+- Idle MOD.WAV pixel marquee on the bottom-bar grid → `app.js` `idle MOD.WAV marquee`
+- Play/stop transport (`setPlayingState`) → `app.js`, just above the `idle MOD.WAV marquee` banner
+- Modal open/close → `app.js` `modal open/close`
+- Per-step FM parameter popup → `app.js` `FM per-step popup`
+- Oscilloscope / waveform draw + `resizeCanvas` → `app.js` `oscilloscope draw`
+- Bottom bar + grid styles → `styles.css` `floating bottom bar`
+- Sequencer modal / panel styles → `styles.css` `synth modal`, `synth panel (inside modal)`
+- Hero, nav, sections, layout → `styles.css` `hero` / `nav` / `sections` / `layout shells`
+
+**Keep banners and their associated code intact — this is a token-cost guideline, not just style.**
+The whole point of the sectioning is to bound how much an agent has to read. So:
+- Don't rename or churn banners casually; the concept→banner map above and muscle-memory greps
+  depend on stable names. A rename forces re-reading to re-find things (token-heavy drift).
+- Keep a behavior's code under its existing banner rather than scattering it; prefer editing in
+  place over relocating code across sections (relocation = large diffs + re-verification).
+- Only add a *new* banner when introducing a genuinely new behavior — then add one line to the
+  concept map above in the same commit.
+
 ## Workflow
 
 - **You MUST run the smoke tests before committing any change to `index.html`, `styles.css`,
