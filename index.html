@@ -217,7 +217,6 @@
     align-items: center;
     gap: 0.35rem;
     flex-shrink: 0;
-    margin-left: auto;
   }
   .synth-bar .bar-play{
     font-family: 'JetBrains Mono', monospace;
@@ -237,18 +236,18 @@
 
   .bar-seq{
     display: grid;
-    grid-template-rows: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 6px);
     gap: 2px;
-    flex: 1;
-    min-width: 0;
-    max-width: 480px;
+    margin-left: auto;
+    width: max-content;
   }
   .bar-seq-row{
     display: grid;
-    grid-template-columns: repeat(16, 1fr);
+    grid-template-columns: repeat(16, 6px);
     gap: 2px;
   }
   .bar-step{
+    width: 6px;
     height: 6px;
     border-radius: 1px;
     background: var(--line);
