@@ -35,53 +35,12 @@
     max-width: 1040px;
     margin: 0 auto;
   }
-  /* sections with a side kicker get a 2-column editorial grid */
-  section.has-rail{
-    display: grid;
-    grid-template-columns: 160px 1fr;
-    gap: 3rem;
-    align-items: start;
-  }
-  section.has-rail .kicker{
-    margin: 0;
-    padding-top: 0.5rem;
-    border-left: 1px solid var(--line);
-    padding-left: 1rem;
-  }
-  section.has-rail .section-body{ max-width: 640px; }
   @media (max-width: 800px){
     section{ padding: 3rem 1.5rem; max-width: 720px; }
-    section.has-rail{ display: block; }
-    section.has-rail .kicker{
-      border-left: none; padding-left: 0; padding-top: 0;
-      margin: 0 0 0.9rem;
-    }
-    section.has-rail .section-body{ max-width: none; }
   }
   @media (max-width: 600px){
     section{ padding: 2.5rem 1.25rem; }
   }
-
-  .rule{
-    border: none;
-    border-top: 1px solid var(--line);
-    position: relative;
-    margin: 0 auto;
-    max-width: 1040px;
-  }
-  @media (max-width: 800px){
-    .rule{ max-width: 720px; }
-  }
-  .rule::before, .rule::after{
-    content: "";
-    position: absolute;
-    top: -3px;
-    width: 1px;
-    height: 7px;
-    background: var(--line);
-  }
-  .rule::before{ left: 1.5rem; }
-  .rule::after{ right: 1.5rem; }
 
   /* ---------- reveal on scroll ---------- */
   .reveal{
@@ -155,21 +114,6 @@
   .hero h1 .title-main{ white-space: nowrap; }
   .hero-body{ margin-top: 0.4rem; }
   .hero-body .lede{ margin-bottom: 0.55rem; }
-
-  .meta-row{
-    display:flex;
-    flex-wrap: wrap;
-    gap: 1.8rem 2.4rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    color: var(--ink-dim);
-  }
-  .meta-row div span{
-    display:block;
-    color: var(--ink);
-    font-size: 0.92rem;
-    margin-top: 0.25rem;
-  }
 
   /* ---------- floating bottom bar ---------- */
   .synth-bar{
@@ -457,21 +401,8 @@
     opacity: 0.55;
     filter: drop-shadow(0 0 6px var(--phosphor)) drop-shadow(0 0 14px rgba(143,255,196,0.35));
   }
-  /* soft veil over the waveform so text reads cleanly on top */
-  .bg-veil{
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 50vh;
-    z-index: 1;
-    pointer-events: none;
-    background:
-      radial-gradient(ellipse at 50% 35%, rgba(14,14,13,0) 0%, rgba(14,14,13,0.55) 70%, rgba(14,14,13,0.85) 100%),
-      linear-gradient(to bottom, rgba(14,14,13,0.0) 0%, rgba(14,14,13,0.0) 60%, var(--bg) 100%);
-  }
   /* lift readable content above the bg layers */
-  .nav, section, .rule, footer, .synth-bar, .synth-overlay{
+  .nav, section, footer, .synth-bar, .synth-overlay{
     position: relative;
     z-index: 2;
   }
@@ -870,14 +801,6 @@
     font-weight: 400;
     line-height: 1;
   }
-  .kicker{
-    font-family:'Silkscreen', 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--signal);
-    margin: 0 0 0.9rem;
-  }
   p{
     font-size: 1.02rem;
     line-height: 1.7;
@@ -888,44 +811,6 @@
     font-size: 1.12rem;
     color: var(--ink);
   }
-
-  .spec-grid{
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.6rem 2rem;
-    margin-top: 2rem;
-  }
-  @media (max-width: 560px){
-    .spec-grid{ grid-template-columns: 1fr; }
-  }
-  .spec-grid dt{
-    font-family:'JetBrains Mono', monospace;
-    font-size: 0.66rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    margin-bottom: 0.4rem;
-  }
-  .spec-grid dd{
-    margin:0;
-    font-size: 0.98rem;
-    color: var(--ink);
-    line-height: 1.5;
-  }
-
-  .crumbs{
-    display:flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    margin-top: 1.6rem;
-  }
-  .crumb{
-    font-family:'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    color: var(--ink-dim);
-    padding: 0;
-  }
-  .crumb + .crumb::before{ content: ' / '; opacity: 0.4; margin-right: 0.5rem; }
 
   footer{
     padding: 5rem 2rem 4rem;

@@ -8,9 +8,8 @@ with a drum + acid voice, FX, and offline export to WAV stems / full mix / MIDI.
 
 ## Philosophy (internal — never quote this in site copy)
 
-These ideas drive design and product decisions. They are the *why*. They must never
-appear as literal text on the page — stated outright they read as over-earnest. Let them
-show through choices, not words.
+The *why* behind design/product decisions. Never put these as literal text on the page —
+stated outright they read as over-earnest. Let them show through choices, not words.
 
 - **Creativity is treated as sacred.** Expectations for the event are firm, but framed so
   people are *excited* to be part of it — never gatekept, never a chore.
@@ -74,47 +73,28 @@ Known intent (not yet built):
 - **Circuit background** is a hand-placed inline `<svg>` in `index.html` (coordinates are manual).
   Editing it means moving real numbers; there's no generator.
 
-## Navigating the code (read before searching)
+## Navigating the code (before reading whole files)
 
-`app.js` and `styles.css` are sectioned with `/* ---- name ---- */` banners. **Grep the banners
-for a live table of contents instead of scanning a whole file** — e.g. `grep -n '/\* -' app.js`
-gives every section with current line numbers (self-updating, never stale). Then read just that
-section's ~80-line region.
+`app.js` and `styles.css` use `/* ---- name ---- */` banners. Grep them for a live, never-stale
+ToC — `grep -n '/\* -' app.js` — then read only that ~80-line region. Search the banner *name*,
+never a line number (they drift). Fuzzy → banner:
+- export / WAV / ZIP / MIDI → `app.js` `export: 4-bar stems`
+- step toggle, acid pitch-drag, mute/solo, pattern state → `app.js` `step sequencer`
+- bottom-grid pixel marquee → `app.js` `idle MOD.WAV marquee`; play/stop (`setPlayingState`) sits just above it
+- modal open/close → `app.js` `modal open/close`; FM popup → `FM per-step popup`; waveform/`resizeCanvas` → `oscilloscope draw`
+- bottom-bar CSS → `styles.css` `floating bottom bar`; modal CSS → `synth modal` / `synth panel`; page CSS → `hero` / `nav` / `sections` / `layout shells`
 
-Concept → banner (search the banner string, not a line number — line numbers drift):
-- Stem / mix / MIDI export, WAV/ZIP/CRC32 codecs → `app.js` `export: 4-bar stems + mix + MIDI`
-- Step toggling, acid pitch-drag, mute/solo, pattern state → `app.js` `step sequencer`
-- Idle MOD.WAV pixel marquee on the bottom-bar grid → `app.js` `idle MOD.WAV marquee`
-- Play/stop transport (`setPlayingState`) → `app.js`, just above the `idle MOD.WAV marquee` banner
-- Modal open/close → `app.js` `modal open/close`
-- Per-step FM parameter popup → `app.js` `FM per-step popup`
-- Oscilloscope / waveform draw + `resizeCanvas` → `app.js` `oscilloscope draw`
-- Bottom bar + grid styles → `styles.css` `floating bottom bar`
-- Sequencer modal / panel styles → `styles.css` `synth modal`, `synth panel (inside modal)`
-- Hero, nav, sections, layout → `styles.css` `hero` / `nav` / `sections` / `layout shells`
-
-**Keep banners and their associated code intact — this is a token-cost guideline, not just style.**
-The whole point of the sectioning is to bound how much an agent has to read. So:
-- Don't rename or churn banners casually; the concept→banner map above and muscle-memory greps
-  depend on stable names. A rename forces re-reading to re-find things (token-heavy drift).
-- Keep a behavior's code under its existing banner rather than scattering it; prefer editing in
-  place over relocating code across sections (relocation = large diffs + re-verification).
-- Only add a *new* banner when introducing a genuinely new behavior — then add one line to the
-  concept map above in the same commit.
+**Keep banners + their code stable (token-cost, not style):** don't rename/churn banners or scatter
+a behavior across sections — both force re-reading and big diffs. Add a new banner only for genuinely
+new behavior, updating the map above in the same commit.
 
 ## Workflow
 
-- **You MUST run the smoke tests before committing any change to `index.html`, `styles.css`,
-  or `app.js`.** Run `npm test` (one-time setup: `npm install && npx playwright install chromium`).
-  All tests must pass before you commit. They cover both viewports, guard against console errors
-  (a stray null lookup once silently halted all JS), and confirm the sequencer grid + scope render
-  and the modal opens. If a change legitimately alters behavior the tests assert, update the tests
-  in the same commit — never delete an assertion to make it pass.
-- **Do NOT use agentic Chrome / browser-automation integrations** (e.g. claude-in-chrome,
-  computer-use) for verifying this site. The Playwright smoke tests are the verification path and
-  should suffice. Only reach for a live browser integration if the smoke-test framework genuinely
-  can't express what's being checked — and if that happens, prefer adding a Playwright assertion.
-- The preview server + screenshots are fine for *iterating* on visuals, but `npm test` is the
-  gate before commit. **Always check both mobile and desktop** (the 720px breakpoint flips layout).
-- **Push to main directly.** Commit and push straight to main; no PR/branch unless asked.
-- End commit messages with the standard `Co-Authored-By` trailer.
+- **Run `npm test` before committing any change to `index.html` / `styles.css` / `app.js`** (one-time:
+  `npm install && npx playwright install chromium`). Must pass. Covers both viewports, a console-error
+  guard (a stray null lookup once silently halted all JS), and modal/grid/scope render. If a change
+  legitimately alters asserted behavior, update the test in the same commit — never delete an assertion to pass.
+- **Don't use agentic Chrome / computer-use to verify this site** — Playwright is the path. Only if it
+  genuinely can't express the check, and then prefer adding an assertion. Preview server + screenshots
+  are fine for *iterating*; `npm test` is the commit gate. Always check mobile + desktop (720px flips layout).
+- **Push to main directly** (no PR/branch unless asked). End commit messages with the `Co-Authored-By` trailer.
