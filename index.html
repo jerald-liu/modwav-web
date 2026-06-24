@@ -520,7 +520,10 @@
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
   }
-  .unmute-all-btn:hover{ background: #c54a3a; color: #0E0E0D; }
+  @media (hover: hover){
+    .unmute-all-btn:hover{ background: #c54a3a; color: #0E0E0D; }
+  }
+  .unmute-all-btn:focus{ outline: none; }
   .track-ctrl-btn{
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem;
