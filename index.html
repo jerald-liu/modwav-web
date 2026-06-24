@@ -1070,7 +1070,7 @@
   <div class="bar-status">
     <span class="dot" id="statusDot"></span>
   </div>
-  <button class="bar-play" id="barPlayBtn">Play</button>
+  <button class="bar-play" id="barPlayBtn" title="Play" aria-label="Play">▶</button>
 </div>
 
 <!-- ================= SYNTH MODAL ================= -->
@@ -1947,7 +1947,9 @@ function setPlayingState(isPlaying){
     toggleBtn.textContent = '◼';
     toggleBtn.title = 'Stop';
     toggleBtn.setAttribute('aria-label', 'Stop');
-    barPlayBtn.textContent = 'Stop';
+    barPlayBtn.textContent = '◼';
+    barPlayBtn.title = 'Stop';
+    barPlayBtn.setAttribute('aria-label', 'Stop');
     statusDot.classList.add('live');
     modalDot.classList.add('live');
     statusText.textContent = 'PLAYING';
@@ -1957,7 +1959,9 @@ function setPlayingState(isPlaying){
     toggleBtn.textContent = '▶';
     toggleBtn.title = 'Play';
     toggleBtn.setAttribute('aria-label', 'Play');
-    barPlayBtn.textContent = 'Play';
+    barPlayBtn.textContent = '▶';
+    barPlayBtn.title = 'Play';
+    barPlayBtn.setAttribute('aria-label', 'Play');
     statusDot.classList.remove('live');
     modalDot.classList.remove('live');
     statusText.textContent = 'STOPPED';
