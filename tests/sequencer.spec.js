@@ -226,3 +226,35 @@ test('pages: double duplicates the bar, edits stay per-bar', async ({ page }) =>
   await dot(0).click();                              // back to bar 1
   expect(await isOn(hat1)).toBe(copied);             // bar 1 untouched by the bar-2 edit
 });
+
+// 11 — stop always resets playback position. Regardless of where the playhead
+// was when stopped or which bar is being viewed, the next play restarts at
+// bar 1 step 1 (startSequencer sets the absolute currentStep to 0).
+test('pages: stop → next play always restarts at bar 1', async ({ page }) => {
+  await open(page);
+  // 2 bars, viewing bar 2 — so we can prove playback ignores the viewed bar.
+  await page.locator('#doubleBtn').click();
+  const dot = (i) => page.locator('#pageDots .page-dot').nth(i);
+  await dot(1).click();
+  await expect(dot(1)).toHaveClass(/\bviewing\b/);
+
+  const playingBar = () => page.evaluate(() => {
+    const dots = document.querySelectorAll('#pageDots .page-dot');
+    for (let i = 0; i < dots.length; i++) if (dots[i].classList.contains('playing')) return i;
+    return -1;
+  });
+
+  // First playback: let it advance into bar 2 (at 140bpm a bar is ~1.7s).
+  await page.locator('#synthToggle').click();
+  await expect.poll(playingBar, { timeout: 4000, intervals: [100] }).toBe(1);
+
+  // Stop, then play again — playback must restart at bar 1.
+  await page.locator('#synthToggle').click(); // stop
+  await expect.poll(playingBar).toBe(-1);
+  await page.locator('#synthToggle').click(); // play
+  await expect.poll(playingBar, { timeout: 2000, intervals: [50] }).toBe(0);
+  // viewing was never touched — still on bar 2.
+  await expect(dot(1)).toHaveClass(/\bviewing\b/);
+
+  await page.locator('#synthToggle').click(); // clean up
+});
