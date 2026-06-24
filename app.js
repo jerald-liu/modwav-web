@@ -23,6 +23,18 @@ synthOverlay.addEventListener('click', (e)=>{
   if(e.target === synthOverlay) closeModal();
 });
 
+/* ---------------- nav scroll-fade ---------------- */
+// Fade the fixed top banner out as the page scrolls, so it never sits over
+// content scrolling up beneath it.
+const navEl = document.querySelector('.nav');
+const NAV_FADE_PX = 90; // fully faded before content scrolls up into the banner
+function updateNavFade(){
+  const o = Math.max(0, 1 - window.scrollY / NAV_FADE_PX);
+  navEl.style.opacity = o.toFixed(3);
+}
+window.addEventListener('scroll', updateNavFade, { passive: true });
+updateNavFade();
+
 /* ---------------- FM per-step popup ---------------- */
 const fmPopup = document.getElementById('fmPopup');
 const fmPopupStep = document.getElementById('fmPopupStep');
