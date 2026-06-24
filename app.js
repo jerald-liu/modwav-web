@@ -377,8 +377,8 @@ TRACKS.forEach((track, ti)=>{
     trackSendValues[track.id].reverb = v;
     if(trackReverbSends[track.id]) trackReverbSends[track.id].gain.value = v / 100;
   }, `${track.label} → reverb send`);
-  sends.appendChild(labelTag('D', delayKnob));
-  sends.appendChild(labelTag('R', reverbKnob));
+  sends.appendChild(delayKnob);
+  sends.appendChild(reverbKnob);
   seqEl.appendChild(sends);
 });
 
@@ -404,8 +404,8 @@ TRACKS.forEach((track, ti)=>{
     reverbBusValue = v;
     if(reverbReturn) reverbReturn.gain.value = v / 100;
   }, 'reverb return level');
-  busSends.appendChild(labelTag('D', delayBusKnob));
-  busSends.appendChild(labelTag('R', reverbBusKnob));
+  busSends.appendChild(delayBusKnob);
+  busSends.appendChild(reverbBusKnob);
   seqEl.appendChild(busSends);
 }
 
@@ -547,16 +547,6 @@ function updateScrollEdges(el, frame){
 }
 function refreshAllScrollEdges(){
   document.querySelectorAll('.seq-row-scroll').forEach(el => updateScrollEdges(el));
-}
-
-function labelTag(text, input){
-  const wrap = document.createElement('label');
-  wrap.className = 'send-knob-wrap mono';
-  const tag = document.createElement('span');
-  tag.textContent = text;
-  wrap.appendChild(tag);
-  wrap.appendChild(input);
-  return wrap;
 }
 
 // Circular rotary knob (0–100). Drag up/down to turn — same idiom as the acid

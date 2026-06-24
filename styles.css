@@ -443,7 +443,7 @@
   .seq-toolbar .unmute-all-btn{ justify-self: end; margin-right: 26px; }
   @media (max-width: 720px){
     .seq-toolbar{
-      grid-template-columns: 110px 1fr 40px;
+      grid-template-columns: 110px 1fr 64px;
       gap: 0.35rem 0.4rem;
     }
     .seq-toolbar .unmute-all-btn{
@@ -544,19 +544,25 @@
     background: var(--phosphor); border-color: var(--phosphor); color: #0E0E0D;
   }
 
+  /* two aligned columns (delay | reverb); knobs centred under their headers */
   .send-knobs{
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     align-items: center;
-    gap: 0.7rem;
+    justify-items: center;
+    gap: 0 0.5rem;
   }
-  .send-knob-wrap{
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.6rem;
-    color: var(--ink-dim);
+  /* column headers in the toolbar's 3rd cell, sharing the same 2-col grid */
+  .send-head{
+    grid-column: 3;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 0.5rem;
+    font-size: 0.55rem;
     letter-spacing: 0.04em;
+    color: var(--ink-dim);
   }
+  .send-head span{ text-align: center; }
   /* FX-bus return row: separated from the tracks, knobs aligned under the sends */
   .seq-bus-label, .seq-bus-spacer, .seq-bus-sends{
     border-top: 1px solid var(--line);
@@ -592,17 +598,17 @@
   }
   @media (max-width: 720px){
     .seq{
-      grid-template-columns: 110px 1fr 40px;
+      grid-template-columns: 110px 1fr 64px;
       gap: 0.35rem 0.4rem;
       align-items: center;
     }
     .seq-label{ font-size: 0.58rem; }
     .track-ctrl{ gap: 3px; }
     .track-ctrl-btn{ width: 18px; height: 18px; font-size: 0.55rem; }
-    .send-knobs{ flex-direction: column; gap: 0.18rem; align-items: flex-start; }
+    .send-knobs{ gap: 0 0.3rem; }
     .knob{ width: 20px; height: 20px; }
     .knob::after{ top: 2px; height: 7px; transform-origin: 50% 8px; }
-    .send-knob-wrap{ gap: 0.18rem; font-size: 0.5rem; }
+    .send-head{ gap: 0 0.3rem; font-size: 0.48rem; }
     .inst-btn{ font-size: 0.5rem; padding: 0.12rem 0.22rem; }
   }
   .seq-label{
