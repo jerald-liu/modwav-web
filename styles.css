@@ -367,16 +367,28 @@
     position: absolute;
     top: 16rem;
     right: 0;
-    bottom: 6.5rem;
+    /* Clip at the separator above the footer's MOD.WAV so the diagram never
+       runs past it — and so its (aspect-ratio-driven) height stops adding
+       page length below the footer. top+bottom fix the box height; the SVG
+       fills it and is clipped by overflow. ~13.2rem is the footer zone below
+       that separator (the MOD.WAV line + footer/body bottom padding), which is
+       viewport-independent, so the same value holds at both breakpoints. */
+    bottom: 13.2rem;
     width: 40%;
     z-index: 0;
     pointer-events: none;
-    filter: blur(0.3px);
+    overflow: hidden;
     opacity: 0.85;
-    --trace: #4a4a40;
+    --trace: #6e2e2e;
+  }
+  .circuit-svg{
+    display: block;
+    width: 100%;
+    height: 100%;
+    filter: blur(0.3px);
   }
   @media (max-width: 720px){
-    .circuit-bg{ width: 92%; top: 18rem; bottom: 6.5rem; }
+    .circuit-bg{ width: 92%; top: 18rem; }
   }
   #bgScope{
     position: fixed;
