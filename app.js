@@ -11,6 +11,8 @@ function openModal(){
 }
 function closeModal(){
   synthOverlay.classList.remove('open');
+  closeFMPopup();
+  closeFxPopup();
 }
 
 synthBar.addEventListener('click', (e)=>{
@@ -56,17 +58,30 @@ function openFMPopup(stepIdx, anchorEl){
   fmRatioVal.textContent = (+FM_RATIO[stepIdx]).toFixed(2);
   fmIndexVal.textContent = FM_INDEX[stepIdx];
   fmPopup.hidden = false;
-  // position above the step, relative to the modal
+  positionPopupAbove(fmPopup, anchorEl);
+}
+
+// position `popup` above `anchorEl`, centred horizontally, relative to the
+// .synth-modal that contains them; falls back below if there's no room above.
+// Uses offset* values (layout coords) rather than getBoundingClientRect: the
+// page has `body { zoom: 1.25 }`, which scales BCR but NOT offset*/style.left,
+// so mixing the two pushes the popup off the right edge of the modal.
+function positionPopupAbove(popup, anchorEl){
   const modal = anchorEl.closest('.synth-modal');
-  const stepR = anchorEl.getBoundingClientRect();
-  const modalR = modal.getBoundingClientRect();
-  const popR = fmPopup.getBoundingClientRect();
-  let left = (stepR.left + stepR.width/2) - modalR.left - popR.width/2;
-  let top = stepR.top - modalR.top - popR.height - 8;
-  if(top < 4){ top = stepR.bottom - modalR.top + 8; }
-  left = Math.max(8, Math.min(modalR.width - popR.width - 8, left));
-  fmPopup.style.left = left + 'px';
-  fmPopup.style.top = top + 'px';
+  let aLeft = 0, aTop = 0;
+  for(let el = anchorEl; el && el !== modal; el = el.offsetParent){
+    aLeft += el.offsetLeft;
+    aTop += el.offsetTop;
+  }
+  const aW = anchorEl.offsetWidth, aH = anchorEl.offsetHeight;
+  const pW = popup.offsetWidth, pH = popup.offsetHeight;
+  const mW = modal.clientWidth;
+  let left = aLeft + aW/2 - pW/2;
+  let top = aTop - pH - 8;
+  if(top < 4) top = aTop + aH + 8;
+  left = Math.max(8, Math.min(mW - pW - 8, left));
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
 }
 function closeFMPopup(){
   fmPopup.hidden = true;
@@ -100,6 +115,78 @@ document.addEventListener('keydown', (e)=>{
     if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
     handleToggle();
   }
+}, true);
+
+/* ---------------- FX bus popups (right-click on the FX BUS knobs) ---------------- */
+const delayFxPopup = document.getElementById('delayFxPopup');
+const reverbFxPopup = document.getElementById('reverbFxPopup');
+const delayFbInput = document.getElementById('delayFbInput');
+const delayStepsInput = document.getElementById('delayStepsInput');
+const delayToneInput = document.getElementById('delayToneInput');
+const delayFbVal = document.getElementById('delayFbVal');
+const delayStepsVal = document.getElementById('delayStepsVal');
+const delayToneVal = document.getElementById('delayToneVal');
+const reverbSizeInput = document.getElementById('reverbSizeInput');
+const reverbDecayInput = document.getElementById('reverbDecayInput');
+const reverbSizeVal = document.getElementById('reverbSizeVal');
+const reverbDecayVal = document.getElementById('reverbDecayVal');
+
+function openDelayFxPopup(anchorEl){
+  closeFxPopup();
+  // sync inputs to current state (in case anything mutated them externally)
+  delayFbInput.value = delayFbValue;       delayFbVal.textContent = delayFbValue;
+  delayStepsInput.value = delaySteps;      delayStepsVal.textContent = delaySteps;
+  delayToneInput.value = delayTone;        delayToneVal.textContent = delayTone;
+  delayFxPopup.hidden = false;
+  positionPopupAbove(delayFxPopup, anchorEl);
+}
+function openReverbFxPopup(anchorEl){
+  closeFxPopup();
+  reverbSizeInput.value = reverbSize;      reverbSizeVal.textContent = reverbSize.toFixed(1);
+  reverbDecayInput.value = reverbDecay;    reverbDecayVal.textContent = reverbDecay.toFixed(1);
+  reverbFxPopup.hidden = false;
+  positionPopupAbove(reverbFxPopup, anchorEl);
+}
+function closeFxPopup(){
+  delayFxPopup.hidden = true;
+  reverbFxPopup.hidden = true;
+}
+document.getElementById('delayFxClose').addEventListener('click', closeFxPopup);
+document.getElementById('reverbFxClose').addEventListener('click', closeFxPopup);
+
+delayFbInput.addEventListener('input', ()=>{
+  delayFbValue = +delayFbInput.value;
+  delayFbVal.textContent = delayFbValue;
+  if(delayFbRef) delayFbRef.gain.value = delayFbValue / 100;
+});
+delayStepsInput.addEventListener('input', ()=>{
+  delaySteps = +delayStepsInput.value;
+  delayStepsVal.textContent = delaySteps;
+  if(delayNodeRef) delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * delaySteps, ctx.currentTime, 0.03);
+});
+delayToneInput.addEventListener('input', ()=>{
+  delayTone = +delayToneInput.value;
+  delayToneVal.textContent = delayTone;
+  if(delayDampRef) delayDampRef.frequency.setTargetAtTime(delayTone, ctx.currentTime, 0.03);
+});
+reverbSizeInput.addEventListener('input', ()=>{
+  reverbSize = +reverbSizeInput.value;
+  reverbSizeVal.textContent = reverbSize.toFixed(1);
+  if(reverbConvolverRef) reverbConvolverRef.buffer = makeImpulseResponse(ctx, reverbSize, reverbDecay);
+});
+reverbDecayInput.addEventListener('input', ()=>{
+  reverbDecay = +reverbDecayInput.value;
+  reverbDecayVal.textContent = reverbDecay.toFixed(1);
+  if(reverbConvolverRef) reverbConvolverRef.buffer = makeImpulseResponse(ctx, reverbSize, reverbDecay);
+});
+
+// outside-click closes any open FX popup. don't close on clicks targeting the
+// bus knobs themselves (those right-clicks re-open via contextmenu).
+document.addEventListener('pointerdown', (e)=>{
+  if(delayFxPopup.hidden && reverbFxPopup.hidden) return;
+  if(delayFxPopup.contains(e.target) || reverbFxPopup.contains(e.target)) return;
+  if(e.target.closest && e.target.closest('.seq-bus-sends .knob')) return;
+  closeFxPopup();
 }, true);
 
 /* ---------------- step sequencer ---------------- */
@@ -138,9 +225,18 @@ function absStep(s){ return currentBar * STEPS + s; } // visual 0–15 → absol
 let TEMPO_BPM = 140;
 let STEP_SECONDS = 60 / TEMPO_BPM / 4;
 let delayNodeRef = null;
+let delayFbRef = null;          // delay feedback gain — mutated by the delay FX popup
+let delayDampRef = null;        // delay tone (lowpass) filter — mutated by the delay FX popup
+let reverbConvolverRef = null;  // reverb convolver — buffer is replaced when size/decay change
 // FX bus return levels (0–100) — formerly the DELAY / REVERB sliders, now knobs.
 let delayBusValue = 22;
 let reverbBusValue = 28;
+// Internal FX parameters, surfaced via the right-click popups on the bus knobs.
+let delayFbValue = 42;          // feedback %
+let delaySteps = 3;             // delay time in 16th-note steps (1–8), tempo-locked
+let delayTone = 3200;           // damping LPF cutoff (Hz)
+let reverbSize = 2.6;           // IR length seconds
+let reverbDecay = 2.8;          // IR decay factor
 
 const TRACKS = [
   { id:'kick',  label:'KICK'  },
@@ -399,11 +495,30 @@ TRACKS.forEach((track, ti)=>{
   const delayBusKnob = makeKnob(delayBusValue, (v)=>{
     delayBusValue = v;
     if(delayReturn) delayReturn.gain.value = v / 100;
-  }, 'delay return level');
+  }, 'delay return level (right-click for FX params)');
   const reverbBusKnob = makeKnob(reverbBusValue, (v)=>{
     reverbBusValue = v;
     if(reverbReturn) reverbReturn.gain.value = v / 100;
-  }, 'reverb return level');
+  }, 'reverb return level (right-click for FX params)');
+  // right-click opens the bus's internal-params popup (FB/STEPS/TONE for delay;
+  // SIZE/DECAY for reverb). long-press on touch fires the same popup.
+  function attachFxRightClick(knob, opener){
+    knob.addEventListener('contextmenu', (e)=>{
+      e.preventDefault();
+      opener(knob);
+    });
+    let lpTimer = null;
+    knob.addEventListener('pointerdown', (e)=>{
+      if(e.pointerType !== 'touch') return;
+      lpTimer = setTimeout(()=>{ opener(knob); lpTimer = null; }, 450);
+    });
+    const clearLP = ()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; } };
+    knob.addEventListener('pointerup', clearLP);
+    knob.addEventListener('pointercancel', clearLP);
+    knob.addEventListener('pointermove', clearLP);
+  }
+  attachFxRightClick(delayBusKnob, openDelayFxPopup);
+  attachFxRightClick(reverbBusKnob, openReverbFxPopup);
   busSends.appendChild(delayBusKnob);
   busSends.appendChild(reverbBusKnob);
   seqEl.appendChild(busSends);
@@ -603,7 +718,7 @@ function setTempo(bpm){
   STEP_SECONDS = 60 / TEMPO_BPM / 4;
   if(bpmAmtEl.value != bpm) bpmAmtEl.value = bpm;
   if(delayNodeRef && ctx){
-    delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * 3, ctx.currentTime, 0.03);
+    delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * delaySteps, ctx.currentTime, 0.03);
   }
 }
 
@@ -682,13 +797,15 @@ function ensureAudio(){
   delayBusInput = ctx.createGain();
   delayBusInput.gain.value = 1;
   const delayNode = ctx.createDelay(2.0);
-  delayNode.delayTime.value = STEP_SECONDS * 3;
+  delayNode.delayTime.value = STEP_SECONDS * delaySteps;
   delayNodeRef = delayNode;
   const delayFb = ctx.createGain();
-  delayFb.gain.value = 0.42;
+  delayFb.gain.value = delayFbValue / 100;
+  delayFbRef = delayFb;
   const delayDamp = ctx.createBiquadFilter();
   delayDamp.type = 'lowpass';
-  delayDamp.frequency.value = 3200;
+  delayDamp.frequency.value = delayTone;
+  delayDampRef = delayDamp;
   delayReturn = ctx.createGain();
   delayReturn.gain.value = delayBusValue / 100;
   delayBusInput.connect(delayNode);
@@ -702,7 +819,8 @@ function ensureAudio(){
   reverbBusInput = ctx.createGain();
   reverbBusInput.gain.value = 1;
   const reverb = ctx.createConvolver();
-  reverb.buffer = makeImpulseResponse(ctx, 2.6, 2.8);
+  reverb.buffer = makeImpulseResponse(ctx, reverbSize, reverbDecay);
+  reverbConvolverRef = reverb;
   reverbReturn = ctx.createGain();
   reverbReturn.gain.value = reverbBusValue / 100;
   reverbBusInput.connect(reverb);
@@ -1209,10 +1327,10 @@ function buildOfflineGraph(octx, trackIds){
 
   const delayBusInput = octx.createGain();
   const delayNode = octx.createDelay(2.0);
-  delayNode.delayTime.value = STEP_SECONDS * 3;
-  const delayFb = octx.createGain(); delayFb.gain.value = 0.42;
+  delayNode.delayTime.value = STEP_SECONDS * delaySteps;
+  const delayFb = octx.createGain(); delayFb.gain.value = delayFbValue / 100;
   const delayDamp = octx.createBiquadFilter();
-  delayDamp.type = 'lowpass'; delayDamp.frequency.value = 3200;
+  delayDamp.type = 'lowpass'; delayDamp.frequency.value = delayTone;
   const delayReturn = octx.createGain();
   delayReturn.gain.value = delayBusValue / 100;
   delayBusInput.connect(delayNode);
@@ -1224,7 +1342,7 @@ function buildOfflineGraph(octx, trackIds){
 
   const reverbBusInput = octx.createGain();
   const reverb = octx.createConvolver();
-  reverb.buffer = makeImpulseResponse(octx, 2.6, 2.8);
+  reverb.buffer = makeImpulseResponse(octx, reverbSize, reverbDecay);
   const reverbReturn = octx.createGain();
   reverbReturn.gain.value = reverbBusValue / 100;
   reverbBusInput.connect(reverb);

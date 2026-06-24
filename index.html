@@ -414,7 +414,7 @@
         <input type="number" id="bpmAmt" min="60" max="180" value="140" inputmode="numeric" class="tempo-input mono">
       </div>
     </div>
-    <p class="panel-hint">tap to toggle · drag up/down on acid for pitch or knobs · long-press / right-click for FM params</p>
+    <p class="panel-hint">tap to toggle · drag up/down on acid for pitch or knobs · long-press / right-click for FM and FX bus params</p>
     <div class="export-block">
       <p class="export-head" id="exportHead">Take it home — 1-bar loop</p>
       <div class="export-row">
@@ -438,6 +438,43 @@
         <span>INDEX</span>
         <input type="range" id="fmIndexInput" min="0" max="400" step="5" value="120">
         <b id="fmIndexVal">120</b>
+      </div>
+    </div>
+    <div class="fm-popup fx-popup" id="delayFxPopup" hidden>
+      <div class="fm-popup-head mono">
+        <span><b>DELAY</b> · FX</span>
+        <button class="fm-popup-close" id="delayFxClose" type="button">✕</button>
+      </div>
+      <div class="fm-popup-row mono">
+        <span>FB</span>
+        <input type="range" id="delayFbInput" min="0" max="95" value="42">
+        <b id="delayFbVal">42</b>
+      </div>
+      <div class="fm-popup-row mono">
+        <span>STEPS</span>
+        <input type="range" id="delayStepsInput" min="1" max="8" value="3">
+        <b id="delayStepsVal">3</b>
+      </div>
+      <div class="fm-popup-row mono">
+        <span>TONE</span>
+        <input type="range" id="delayToneInput" min="500" max="12000" step="100" value="3200">
+        <b id="delayToneVal">3200</b>
+      </div>
+    </div>
+    <div class="fm-popup fx-popup" id="reverbFxPopup" hidden>
+      <div class="fm-popup-head mono">
+        <span><b>REVERB</b> · FX</span>
+        <button class="fm-popup-close" id="reverbFxClose" type="button">✕</button>
+      </div>
+      <div class="fm-popup-row mono">
+        <span>SIZE</span>
+        <input type="range" id="reverbSizeInput" min="0.5" max="5" step="0.1" value="2.6">
+        <b id="reverbSizeVal">2.6</b>
+      </div>
+      <div class="fm-popup-row mono">
+        <span>DECAY</span>
+        <input type="range" id="reverbDecayInput" min="1" max="5" step="0.1" value="2.8">
+        <b id="reverbDecayVal">2.8</b>
       </div>
     </div>
   </div>
