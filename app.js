@@ -93,12 +93,14 @@ fmRatioInput.addEventListener('input', ()=>{
   const v = +fmRatioInput.value;
   FM_RATIO[fmPopupStepIdx] = v;
   fmRatioVal.textContent = v.toFixed(2);
+  saveStateSoon();
 });
 fmIndexInput.addEventListener('input', ()=>{
   if(fmPopupStepIdx < 0) return;
   const v = +fmIndexInput.value;
   FM_INDEX[fmPopupStepIdx] = v;
   fmIndexVal.textContent = v;
+  saveStateSoon();
 });
 // click outside the popup closes it
 document.addEventListener('pointerdown', (e)=>{
@@ -142,6 +144,7 @@ const FX_BINDINGS = [
     const v = +b.input.value;
     b.val.textContent = b.fmt(v);
     b.apply(v);
+    saveStateSoon();
   });
   return b;
 });
@@ -276,6 +279,7 @@ function unmuteAll(){
       muteButtons[t.id]?.classList.remove('active');
     }
   });
+  saveStateSoon();
 }
 document.getElementById('unmuteAllBtn').addEventListener('click', unmuteAll);
 function trackAudible(id){
@@ -283,6 +287,83 @@ function trackAudible(id){
   if(anySolo) return trackSolo[id]; // solo overrides mute on the soloed track
   return !trackMute[id];
 }
+
+/* ---- state persistence (localStorage) ---- */
+// Mirror creative state to localStorage so a refresh doesn't wipe the pattern.
+// Writes coalesce via rAF, so calling saveStateSoon() on every mutation is cheap
+// even during rapid drags. loadState mutates arrays in place to preserve the
+// references already captured in closures and DOM build code below.
+const STATE_KEY = 'modwav-state-v1';
+function saveStateNow(){
+  try {
+    localStorage.setItem(STATE_KEY, JSON.stringify({
+      v: 1,
+      pattern, acidNotes: ACID_NOTES, acidAccent: ACID_ACCENT,
+      fmRatio: FM_RATIO, fmIndex: FM_INDEX,
+      numBars, currentBar, tempo: TEMPO_BPM, acidInstrument,
+      trackSends: trackSendValues, trackMute, trackSolo,
+      fx: {
+        delayBus: delayBusValue, reverbBus: reverbBusValue,
+        delayFb: delayFbValue, delayDiv: delayDivIndex, delayTone,
+        reverbSize, reverbDecay,
+      },
+    }));
+  } catch(_) { /* quota or disabled — silent */ }
+}
+let _saveScheduled = false;
+function saveStateSoon(){
+  if(_saveScheduled) return;
+  _saveScheduled = true;
+  requestAnimationFrame(() => { _saveScheduled = false; saveStateNow(); });
+}
+// Flush any pending save when the page is about to hide (reload, tab close,
+// nav away, mobile background). pagehide fires more reliably than
+// beforeunload, especially on iOS Safari.
+addEventListener('pagehide', () => { if(_saveScheduled) saveStateNow(); });
+addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden' && _saveScheduled) saveStateNow();
+});
+(function loadState(){
+  let s;
+  try {
+    const raw = localStorage.getItem(STATE_KEY);
+    if(!raw) return;
+    s = JSON.parse(raw);
+    if(!s || s.v !== 1) return;
+  } catch(_) { return; }
+  const replaceArr = (target, src) => {
+    if(!Array.isArray(src)) return;
+    target.length = 0;
+    target.push(...src);
+  };
+  if(s.pattern) Object.keys(pattern).forEach(id => replaceArr(pattern[id], s.pattern[id]));
+  replaceArr(ACID_NOTES,  s.acidNotes);
+  replaceArr(ACID_ACCENT, s.acidAccent);
+  replaceArr(FM_RATIO,    s.fmRatio);
+  replaceArr(FM_INDEX,    s.fmIndex);
+  if([1,2,4].includes(s.numBars)) numBars = s.numBars;
+  if(typeof s.currentBar === 'number') currentBar = Math.max(0, Math.min(numBars - 1, s.currentBar));
+  if(typeof s.tempo === 'number'){
+    TEMPO_BPM = Math.max(60, Math.min(180, Math.round(s.tempo)));
+    STEP_SECONDS = 60 / TEMPO_BPM / 4;
+  }
+  if(s.acidInstrument === 'fm' || s.acidInstrument === 'acid') acidInstrument = s.acidInstrument;
+  if(s.trackSends) Object.keys(trackSendValues).forEach(id => {
+    if(s.trackSends[id]) Object.assign(trackSendValues[id], s.trackSends[id]);
+  });
+  if(s.trackMute) Object.assign(trackMute, s.trackMute);
+  if(s.trackSolo) Object.assign(trackSolo, s.trackSolo);
+  if(s.fx){
+    const fx = s.fx;
+    if(typeof fx.delayBus === 'number')   delayBusValue  = fx.delayBus;
+    if(typeof fx.reverbBus === 'number')  reverbBusValue = fx.reverbBus;
+    if(typeof fx.delayFb === 'number')    delayFbValue   = fx.delayFb;
+    if(typeof fx.delayDiv === 'number' && fx.delayDiv >= 0 && fx.delayDiv < DELAY_DIVS.length) delayDivIndex = fx.delayDiv;
+    if(typeof fx.delayTone === 'number')  delayTone      = fx.delayTone;
+    if(typeof fx.reverbSize === 'number') reverbSize     = fx.reverbSize;
+    if(typeof fx.reverbDecay === 'number') reverbDecay   = fx.reverbDecay;
+  }
+})();
 
 /* ---- build mini bar sequencer ---- */
 const barSeqEl = document.getElementById('barSeq');
@@ -309,6 +390,7 @@ function setAcidInstrument(name){
   if(instButtons.acid) instButtons.acid.classList.toggle('active', name === 'acid');
   if(instButtons.fm) instButtons.fm.classList.toggle('active', name === 'fm');
   if(name !== 'fm' && typeof closeFMPopup === 'function') closeFMPopup();
+  saveStateSoon();
 }
 
 TRACKS.forEach((track, ti)=>{
@@ -338,9 +420,11 @@ TRACKS.forEach((track, ti)=>{
   muteBtn.className = 'track-ctrl-btn mute';
   muteBtn.textContent = 'M';
   muteBtn.title = `mute ${track.label}`;
+  muteBtn.classList.toggle('active', trackMute[track.id]); // reflect loaded state
   muteBtn.addEventListener('click', ()=>{
     trackMute[track.id] = !trackMute[track.id];
     muteBtn.classList.toggle('active', trackMute[track.id]);
+    saveStateSoon();
   });
   muteButtons[track.id] = muteBtn;
   const soloBtn = document.createElement('button');
@@ -348,9 +432,11 @@ TRACKS.forEach((track, ti)=>{
   soloBtn.className = 'track-ctrl-btn solo';
   soloBtn.textContent = 'S';
   soloBtn.title = `solo ${track.label}`;
+  soloBtn.classList.toggle('active', trackSolo[track.id]); // reflect loaded state
   soloBtn.addEventListener('click', ()=>{
     trackSolo[track.id] = !trackSolo[track.id];
     soloBtn.classList.toggle('active', trackSolo[track.id]);
+    saveStateSoon();
   });
   ctrl.append(muteBtn, soloBtn);
   label.appendChild(ctrl);
@@ -376,6 +462,7 @@ TRACKS.forEach((track, ti)=>{
         const barStep = barSeqEl.querySelector(`.bar-step[data-track="${track.id}"][data-step="${s}"]`);
         if(barStep) barStep.classList.toggle('on', !!pattern[track.id][i]);
       }
+      saveStateSoon();
     }
 
     if(track.id === 'acid'){
@@ -425,6 +512,7 @@ TRACKS.forEach((track, ti)=>{
         if(next !== ACID_NOTES[i]){
           ACID_NOTES[i] = next;
           noteLabel.textContent = noteName(next);
+          saveStateSoon();
         }
         e.preventDefault();
       });
@@ -461,12 +549,14 @@ TRACKS.forEach((track, ti)=>{
 
   const sends = document.createElement('div');
   sends.className = 'send-knobs';
-  const defaults = TRACK_SEND_DEFAULTS[track.id];
-  const delayKnob = makeKnob(defaults.delay, (v)=>{
+  // trackSendValues is the source of truth (defaults seeded at module load,
+  // possibly overwritten by loadState); the knob's initial angle follows it.
+  const initial = trackSendValues[track.id];
+  const delayKnob = makeKnob(initial.delay, (v)=>{
     trackSendValues[track.id].delay = v;
     if(trackDelaySends[track.id]) trackDelaySends[track.id].gain.value = v / 100;
   }, `${track.label} → delay send`);
-  const reverbKnob = makeKnob(defaults.reverb, (v)=>{
+  const reverbKnob = makeKnob(initial.reverb, (v)=>{
     trackSendValues[track.id].reverb = v;
     if(trackReverbSends[track.id]) trackReverbSends[track.id].gain.value = v / 100;
   }, `${track.label} → reverb send`);
@@ -592,6 +682,7 @@ function setCurrentBar(b){
   if(b < 0 || b >= numBars || b === currentBar) return;
   currentBar = b;
   renderPage();
+  saveStateSoon();
 }
 
 // _Now helpers actually mutate the per-step arrays; the public ÷2/×2 handlers
@@ -602,6 +693,7 @@ function doubleLengthNow(){
   PLOCK_ARRAYS().forEach(a=>{ const n = a.length; for(let k=0;k<n;k++) a.push(a[k]); });
   numBars *= 2;
   renderPage();
+  saveStateSoon();
 }
 function halveLengthNow(){
   if(numBars <= 1) return;
@@ -609,6 +701,7 @@ function halveLengthNow(){
   numBars /= 2;
   if(currentBar >= numBars) currentBar = numBars - 1;
   renderPage();
+  saveStateSoon();
   // No mini-grid clamping needed: while playing, the scheduler's modulo on the
   // new totalSteps + highlightPlayhead handles the transition; while stopped,
   // the mini-grid is always on bar 0 (playhead reset), which halve never removes.
@@ -687,6 +780,7 @@ function makeKnob(value, onInput, title){
     if(!dragging) return;
     setVal(startVal + (startY - e.clientY) * 0.6); // up = increase
     onInput(val);
+    saveStateSoon(); // every knob in this app drives persisted state
     e.preventDefault();
   });
   function end(e){
@@ -714,6 +808,7 @@ function setTempo(bpm){
   if(delayNodeRef && ctx){
     delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * delayMultiplier(), ctx.currentTime, 0.03);
   }
+  saveStateSoon();
 }
 
 bpmAmtEl.addEventListener('input', ()=>{
@@ -1628,3 +1723,15 @@ async function runExport(){
   }
 }
 exportBtn.addEventListener('click', runExport);
+
+/* ---- post-load DOM sync ---- */
+// loadState() ran early to mutate state vars before the DOM builders read them
+// (so step .on classes, knob angles, mute/solo, etc. all reflect saved state
+// at build time). A few things still need a final sync though: the BPM input
+// keeps its HTML default until setTempo writes to it, the modal grid build
+// uses raw 0–15 indices that only match bar 0, and the ACID button is
+// hardcoded `active`. These calls reconcile that. Lives at the end of the
+// file so all const/let declarations it touches are already initialized.
+setTempo(TEMPO_BPM);
+renderPage();
+setAcidInstrument(acidInstrument);

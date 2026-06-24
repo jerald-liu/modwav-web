@@ -351,3 +351,23 @@ test('pages: halve queued mid-play applies at next bar boundary', async ({ page 
 
   await page.locator('#synthToggle').click();      // stop / cleanup
 });
+
+// 16 — synth state persists across page reload via localStorage. Touches a
+// representative slice (BPM, a step toggle, length doubled, ACID→FM) and
+// asserts every one of those re-renders on reload.
+test('settings persist across page reload', async ({ page }) => {
+  await open(page);
+  await page.locator('#bpmAmt').fill('128');
+  await page.locator('#bpmAmt').blur();
+  await page.locator('#doubleBtn').click();                                // numBars 1 → 2
+  await page.locator('.step[data-track="kick"][data-step="2"]').click();   // bar 1 kick[2] flip
+  const kick2Before = await page.locator('.step[data-track="kick"][data-step="2"]').evaluate(e => e.classList.contains('on'));
+  await page.locator('.inst-btn').nth(1).click();                          // ACID → FM
+
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('#synthBar').click({ position: { x: 5, y: 5 } });
+  await expect(page.locator('#bpmAmt')).toHaveValue('128');
+  await expect(page.locator('#pageDots .page-dot')).toHaveCount(2);
+  await expect(page.locator('.inst-btn').nth(1)).toHaveClass(/\bactive\b/);
+  expect(await page.locator('.step[data-track="kick"][data-step="2"]').evaluate(e => e.classList.contains('on'))).toBe(kick2Before);
+});

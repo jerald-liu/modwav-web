@@ -77,6 +77,12 @@ Known intent (not yet built):
   *scaled* viewport pixels but `offsetLeft`/`style.left` are *unscaled*. Don't mix them when
   positioning overlays — pick one consistently. `positionPopupAbove` walks the `offsetLeft`
   chain for this reason; mixing BCR + style.left silently overflows popups at the right edge.
+- **State persistence:** creative state (pattern, p-locks, length, tempo, FX, mute/solo) mirrors
+  to `localStorage['modwav-state-v1']` via `saveStateSoon()` (rAF-coalesced) with a
+  `pagehide`/`visibilitychange` flush so refresh-in-flight changes aren't dropped. `loadState()`
+  runs early and mutates arrays in place to preserve references; a tail `setTempo/renderPage/
+  setAcidInstrument` sync block lives at the bottom of `app.js` to reconcile the DOM with the
+  loaded values. To start fresh: `localStorage.removeItem('modwav-state-v1')` in devtools.
 
 ## Navigating the code (before reading whole files)
 
@@ -89,6 +95,7 @@ never a line number (they drift). Fuzzy → banner:
 - bottom-grid pixel marquee → `app.js` `idle MOD.WAV marquee`; play/stop (`setPlayingState`) sits just above it
 - modal open/close → `app.js` `modal open/close`; FM popup → `FM per-step popup`; FX bus popups (delay/reverb internals via right-click on the FX BUS knobs) → `FX bus popups`; waveform/`resizeCanvas` → `oscilloscope draw`
 - nav fade on scroll → `app.js` `nav scroll-fade`
+- save / load to localStorage → `app.js` `state persistence (localStorage)`
 - bottom-bar CSS → `styles.css` `floating bottom bar`; modal CSS → `synth modal` / `synth panel`; page CSS → `hero` / `nav` / `sections` / `layout shells`
 
 **Keep banners + their code stable (token-cost, not style):** don't rename/churn banners or scatter
