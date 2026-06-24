@@ -557,29 +557,38 @@
     color: var(--ink-dim);
     letter-spacing: 0.04em;
   }
-  .send-knob{
-    -webkit-appearance: none;
-    width: 32px;
-    height: 2px;
-    background: var(--line);
-    outline: none;
-    border-radius: 2px;
-    cursor: pointer;
+  /* FX-bus return row: separated from the tracks, knobs aligned under the sends */
+  .seq-bus-label, .seq-bus-spacer, .seq-bus-sends{
+    border-top: 1px solid var(--line);
+    margin-top: 0.3rem;
+    padding-top: 0.55rem;
   }
-  .send-knob::-webkit-slider-thumb{
-    -webkit-appearance: none;
-    width: 9px; height: 9px;
+  .seq-bus-label{ color: var(--ink-dim); }
+  /* circular rotary knob (per-track sends + FX bus returns) */
+  .knob{
+    width: 24px; height: 24px;
     border-radius: 50%;
-    background: var(--phosphor);
-    cursor: pointer;
-    border: none;
+    border: 1px solid var(--line);
+    background: transparent;
+    position: relative;
+    cursor: ns-resize;
+    flex: none;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.15s;
   }
-  .send-knob::-moz-range-thumb{
-    width: 9px; height: 9px;
-    border-radius: 50%;
+  .knob:hover{ border-color: var(--ink-dim); }
+  .knob:focus{ outline: none; border-color: var(--ink-dim); }
+  .knob::after{
+    content: '';
+    position: absolute;
+    left: 50%; top: 3px;
+    width: 2px; height: 8px;
+    margin-left: -1px;
     background: var(--phosphor);
-    cursor: pointer;
-    border: none;
+    border-radius: 1px;
+    transform-origin: 50% 9px;          /* = knob centre (top 3 + 9 = 12) */
+    transform: rotate(var(--knob-ang, 0deg));
   }
   @media (max-width: 720px){
     .seq{
@@ -591,7 +600,8 @@
     .track-ctrl{ gap: 3px; }
     .track-ctrl-btn{ width: 18px; height: 18px; font-size: 0.55rem; }
     .send-knobs{ flex-direction: column; gap: 0.18rem; align-items: flex-start; }
-    .send-knob{ width: 28px; }
+    .knob{ width: 20px; height: 20px; }
+    .knob::after{ top: 2px; height: 7px; transform-origin: 50% 8px; }
     .send-knob-wrap{ gap: 0.18rem; font-size: 0.5rem; }
     .inst-btn{ font-size: 0.5rem; padding: 0.12rem 0.22rem; }
   }

@@ -138,6 +138,9 @@ function absStep(s){ return currentBar * STEPS + s; } // visual 0–15 → absol
 let TEMPO_BPM = 140;
 let STEP_SECONDS = 60 / TEMPO_BPM / 4;
 let delayNodeRef = null;
+// FX bus return levels (0–100) — formerly the DELAY / REVERB sliders, now knobs.
+let delayBusValue = 22;
+let reverbBusValue = 28;
 
 const TRACKS = [
   { id:'kick',  label:'KICK'  },
@@ -366,28 +369,45 @@ TRACKS.forEach((track, ti)=>{
   const sends = document.createElement('div');
   sends.className = 'send-knobs';
   const defaults = TRACK_SEND_DEFAULTS[track.id];
-  const delayKnob = document.createElement('input');
-  delayKnob.type = 'range'; delayKnob.min = 0; delayKnob.max = 100;
-  delayKnob.value = defaults.delay;
-  delayKnob.className = 'send-knob';
-  delayKnob.title = `${track.label} → delay send`;
-  delayKnob.addEventListener('input', ()=>{
-    trackSendValues[track.id].delay = +delayKnob.value;
-    if(trackDelaySends[track.id]) trackDelaySends[track.id].gain.value = delayKnob.value / 100;
-  });
-  const reverbKnob = document.createElement('input');
-  reverbKnob.type = 'range'; reverbKnob.min = 0; reverbKnob.max = 100;
-  reverbKnob.value = defaults.reverb;
-  reverbKnob.className = 'send-knob';
-  reverbKnob.title = `${track.label} → reverb send`;
-  reverbKnob.addEventListener('input', ()=>{
-    trackSendValues[track.id].reverb = +reverbKnob.value;
-    if(trackReverbSends[track.id]) trackReverbSends[track.id].gain.value = reverbKnob.value / 100;
-  });
+  const delayKnob = makeKnob(defaults.delay, (v)=>{
+    trackSendValues[track.id].delay = v;
+    if(trackDelaySends[track.id]) trackDelaySends[track.id].gain.value = v / 100;
+  }, `${track.label} → delay send`);
+  const reverbKnob = makeKnob(defaults.reverb, (v)=>{
+    trackSendValues[track.id].reverb = v;
+    if(trackReverbSends[track.id]) trackReverbSends[track.id].gain.value = v / 100;
+  }, `${track.label} → reverb send`);
   sends.appendChild(labelTag('D', delayKnob));
   sends.appendChild(labelTag('R', reverbKnob));
   seqEl.appendChild(sends);
 });
+
+// FX-bus return row — delay/reverb return knobs aligned under the per-track
+// send columns (same 3rd grid column + .send-knobs structure).
+{
+  const busLabel = document.createElement('div');
+  busLabel.className = 'seq-label seq-bus-label mono';
+  busLabel.innerHTML = '<span>FX BUS</span>';
+  seqEl.appendChild(busLabel);
+
+  const spacer = document.createElement('div'); // occupies the steps column
+  spacer.className = 'seq-bus-spacer';
+  seqEl.appendChild(spacer);
+
+  const busSends = document.createElement('div');
+  busSends.className = 'send-knobs seq-bus-sends';
+  const delayBusKnob = makeKnob(delayBusValue, (v)=>{
+    delayBusValue = v;
+    if(delayReturn) delayReturn.gain.value = v / 100;
+  }, 'delay return level');
+  const reverbBusKnob = makeKnob(reverbBusValue, (v)=>{
+    reverbBusValue = v;
+    if(reverbReturn) reverbReturn.gain.value = v / 100;
+  }, 'reverb return level');
+  busSends.appendChild(labelTag('D', delayBusKnob));
+  busSends.appendChild(labelTag('R', reverbBusKnob));
+  seqEl.appendChild(busSends);
+}
 
 /* ---- pages: 1/2/4-bar length + page navigation ---- */
 // The five per-step arrays grow/shrink to STEPS * numBars. The visual grid is
@@ -539,21 +559,54 @@ function labelTag(text, input){
   return wrap;
 }
 
+// Circular rotary knob (0–100). Drag up/down to turn — same idiom as the acid
+// pitch steps and BPM pill. onInput(value) fires on every change.
+function makeKnob(value, onInput, title){
+  const knob = document.createElement('div');
+  knob.className = 'knob';
+  knob.tabIndex = 0;
+  knob.setAttribute('role', 'slider');
+  knob.setAttribute('aria-valuemin', '0');
+  knob.setAttribute('aria-valuemax', '100');
+  if(title) knob.title = title;
+  let val = value;
+  function setVal(v){
+    val = Math.max(0, Math.min(100, Math.round(v)));
+    // 270° sweep: −135° at 0, 0° (straight up) at 50, +135° at 100
+    knob.style.setProperty('--knob-ang', (-135 + (val / 100) * 270).toFixed(1) + 'deg');
+    knob.setAttribute('aria-valuenow', String(val));
+  }
+  setVal(val);
+  let dragging = false, startY = 0, startVal = 0;
+  knob.addEventListener('pointerdown', (e)=>{
+    if(e.button !== 0) return;
+    dragging = true; startY = e.clientY; startVal = val;
+    try { knob.setPointerCapture(e.pointerId); } catch(_){}
+    e.preventDefault();
+  });
+  knob.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    setVal(startVal + (startY - e.clientY) * 0.6); // up = increase
+    onInput(val);
+    e.preventDefault();
+  });
+  function end(e){
+    if(!dragging) return;
+    dragging = false;
+    try { knob.releasePointerCapture(e.pointerId); } catch(_){}
+  }
+  knob.addEventListener('pointerup', end);
+  knob.addEventListener('pointercancel', end);
+  return knob;
+}
+
 const toggleBtn = document.getElementById('synthToggle');
 const statusDot = document.getElementById('statusDot');
 const modalDot = document.getElementById('modalDot');
 const statusText = document.getElementById('statusText');
-const delayAmtEl = document.getElementById('delayAmt');
-const reverbAmtEl = document.getElementById('reverbAmt');
 const bpmAmtEl = document.getElementById('bpmAmt');
 const tempoCtrlEl = document.querySelector('.tempo-ctrl');
 
-delayAmtEl.addEventListener('input', ()=>{
-  if(delayReturn) delayReturn.gain.value = delayAmtEl.value / 100;
-});
-reverbAmtEl.addEventListener('input', ()=>{
-  if(reverbReturn) reverbReturn.gain.value = reverbAmtEl.value / 100;
-});
 function setTempo(bpm){
   bpm = Math.max(60, Math.min(180, Math.round(bpm)));
   TEMPO_BPM = bpm;
@@ -647,7 +700,7 @@ function ensureAudio(){
   delayDamp.type = 'lowpass';
   delayDamp.frequency.value = 3200;
   delayReturn = ctx.createGain();
-  delayReturn.gain.value = delayAmtEl.value / 100;
+  delayReturn.gain.value = delayBusValue / 100;
   delayBusInput.connect(delayNode);
   delayNode.connect(delayDamp);
   delayDamp.connect(delayFb);
@@ -661,7 +714,7 @@ function ensureAudio(){
   const reverb = ctx.createConvolver();
   reverb.buffer = makeImpulseResponse(ctx, 2.6, 2.8);
   reverbReturn = ctx.createGain();
-  reverbReturn.gain.value = reverbAmtEl.value / 100;
+  reverbReturn.gain.value = reverbBusValue / 100;
   reverbBusInput.connect(reverb);
   reverb.connect(reverbReturn);
   reverbReturn.connect(analyser);
@@ -1171,7 +1224,7 @@ function buildOfflineGraph(octx, trackIds){
   const delayDamp = octx.createBiquadFilter();
   delayDamp.type = 'lowpass'; delayDamp.frequency.value = 3200;
   const delayReturn = octx.createGain();
-  delayReturn.gain.value = (+delayAmtEl.value) / 100;
+  delayReturn.gain.value = delayBusValue / 100;
   delayBusInput.connect(delayNode);
   delayNode.connect(delayDamp);
   delayDamp.connect(delayFb);
@@ -1183,7 +1236,7 @@ function buildOfflineGraph(octx, trackIds){
   const reverb = octx.createConvolver();
   reverb.buffer = makeImpulseResponse(octx, 2.6, 2.8);
   const reverbReturn = octx.createGain();
-  reverbReturn.gain.value = (+reverbAmtEl.value) / 100;
+  reverbReturn.gain.value = reverbBusValue / 100;
   reverbBusInput.connect(reverb);
   reverb.connect(reverbReturn);
   reverbReturn.connect(octx.destination);
