@@ -373,10 +373,14 @@
     right: 0;
     bottom: 0;
     left: auto;
-    width: 46%;
+    /* desktop: the diagram fills this width (left edge at page center), so its
+       full width shows; it's taller than the box, so top/bottom overflow and
+       are clipped + faded. Centered vertically so both ends cut evenly. */
+    width: 50%;
+    display: flex;
+    align-items: center;
     z-index: 0;
     pointer-events: none;
-    /* clip the scaled-up diagram to the page so it can't add scroll */
     overflow: hidden;
     opacity: 0.6;
     --trace: #6e2e2e;
@@ -386,16 +390,13 @@
   .circuit-svg{
     display: block;
     width: 100%;
-    height: 100%;
+    height: auto;
     filter: blur(0.3px);
-    /* desktop: scale the diagram up, anchored to the right edge, so its left
-       edge reaches the page center — overflow is clipped by .circuit-bg. */
-    transform: scale(1.7);
-    transform-origin: 100% 50%;
   }
   @media (max-width: 720px){
-    .circuit-bg{ width: 92%; }
-    .circuit-svg{ transform: none; }
+    /* mobile: full diagram fit (meet) behind the text, faded top/bottom */
+    .circuit-bg{ width: 92%; display: block; }
+    .circuit-svg{ height: 100%; }
   }
   #bgScope{
     position: fixed;
