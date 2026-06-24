@@ -290,3 +290,64 @@ test('pages: mini-grid follows the playhead, not the viewed bar', async ({ page 
   await dot(1).click();
   expect(await miniKick1On()).toBe(false);
 });
+
+// 14 — FX bus right-click opens the internal-params popup for the right bus,
+// shows defaults (incl. the discrete delay-time label), and the popup stays
+// inside the modal. The containment check guards against the `body{zoom:1.25}`
+// positioning bug that mixes BCR (scaled) and style.left (unscaled).
+test('FX bus: right-click opens param popups with defaults; popup stays inside modal', async ({ page }) => {
+  await open(page);
+  const delayBus = page.locator('.seq-bus-sends .knob').nth(0);
+  const reverbBus = page.locator('.seq-bus-sends .knob').nth(1);
+  const delayPop = page.locator('#delayFxPopup');
+  const reverbPop = page.locator('#reverbFxPopup');
+
+  // delay bus → delay popup with FB/TIME/TONE defaults
+  await delayBus.dispatchEvent('contextmenu');
+  await expect(delayPop).toBeVisible();
+  await expect(reverbPop).toBeHidden();
+  await expect(page.locator('#delayFbVal')).toHaveText('42');
+  await expect(page.locator('#delayStepsVal')).toHaveText('3/16');
+  await expect(page.locator('#delayToneVal')).toHaveText('3200');
+
+  // reverb bus right-click swaps popups
+  await reverbBus.dispatchEvent('contextmenu');
+  await expect(delayPop).toBeHidden();
+  await expect(reverbPop).toBeVisible();
+  await expect(page.locator('#reverbSizeVal')).toHaveText('2.6');
+  await expect(page.locator('#reverbDecayVal')).toHaveText('2.8');
+
+  // popup must sit fully inside the modal (the rightmost-knob case is where
+  // overflow showed up under body{zoom:1.25}). 1px slack for sub-pixel rounding.
+  const containment = await page.evaluate(() => {
+    const p = document.getElementById('reverbFxPopup').getBoundingClientRect();
+    const m = document.querySelector('.synth-modal').getBoundingClientRect();
+    return { fits: p.left >= m.left - 1 && p.right <= m.right + 1, popRight: p.right, modalRight: m.right };
+  });
+  expect(containment.fits, `popup right ${containment.popRight} > modal right ${containment.modalRight}`).toBe(true);
+
+  // outside-click (modal padding area) closes any open popup
+  await page.locator('.synth-modal').click({ position: { x: 5, y: 5 } });
+  await expect(reverbPop).toBeHidden();
+  await expect(delayPop).toBeHidden();
+});
+
+// 15 — ÷2 / ×2 mid-playback: clicking the button while running queues the
+// change (button gets .pending), length stays unchanged for the rest of the
+// audible bar, then applies at the bar boundary (within ~1 bar at default BPM).
+test('pages: halve queued mid-play applies at next bar boundary', async ({ page }) => {
+  await open(page);
+  await page.locator('#doubleBtn').click();
+  await expect(page.locator('#pageDots .page-dot')).toHaveCount(2);
+
+  await page.locator('#synthToggle').click();      // play
+  await page.locator('#halveBtn').click();         // queue halve
+  await expect(page.locator('#halveBtn')).toHaveClass(/\bpending\b/);
+  await expect(page.locator('#pageDots .page-dot')).toHaveCount(2); // not applied yet
+
+  // Within one bar (~1.7 s at 140 bpm) the queued change fires at the boundary.
+  await expect(page.locator('#pageDots .page-dot')).toHaveCount(1, { timeout: 4000 });
+  await expect(page.locator('#halveBtn')).not.toHaveClass(/\bpending\b/);
+
+  await page.locator('#synthToggle').click();      // stop / cleanup
+});

@@ -14,7 +14,7 @@ The synth is a four-track step sequencer (kick / snare / hat / acid) with:
 - An FM instrument option on the acid track (per-step ratio / index via a popup)
 - Per-track delay + reverb send knobs
 - Draggable / editable BPM control (60–180)
-- Global delay and reverb return buses with feedback delay and a synthetic impulse response
+- Global delay and reverb return buses with feedback delay and a synthetic impulse response — right-click the FX bus knobs for internal params (FB/TIME/TONE, SIZE/DECAY)
 
 Drum voices are modeled on the 909 (oscillator + envelope, not samples). Acid is a sawtooth into a resonant lowpass with per-step accent and pitch.
 
@@ -38,7 +38,12 @@ Two specs:
   from development: step toggle + bottom-bar mirror, acid pitch-drag axis lock
   (tap/vertical/horizontal), right-click never toggling a step, FM-popup gating,
   spacebar transport (no page scroll, ignored while editing BPM), play-state sync,
-  mute/solo/unmute-all, and BPM clamping.
+  mute/solo/unmute-all, BPM clamping, multi-bar pages (÷2/×2 bounded buttons,
+  per-bar edits, stop→play always restarts at bar 1, mini-grid follows the
+  playhead not the viewed bar), live mid-play halve queues + applies at the
+  next bar boundary, and the FX bus right-click popups (defaults render and
+  the popup stays inside the modal — guards a `body { zoom: 1.25 }` overflow
+  bug class).
 
 **These deps live in `devDependencies` only — the shipped site stays zero-dependency.**
 

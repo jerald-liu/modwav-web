@@ -73,6 +73,10 @@ Known intent (not yet built):
   `OfflineAudioContext` for export. Preserve this signature.
 - **Circuit background** is a hand-placed inline `<svg>` in `index.html` (coordinates are manual).
   Editing it means moving real numbers; there's no generator.
+- **`body { zoom: 1.25 }` is a position-math footgun.** `getBoundingClientRect()` returns
+  *scaled* viewport pixels but `offsetLeft`/`style.left` are *unscaled*. Don't mix them when
+  positioning overlays — pick one consistently. `positionPopupAbove` walks the `offsetLeft`
+  chain for this reason; mixing BCR + style.left silently overflows popups at the right edge.
 
 ## Navigating the code (before reading whole files)
 
@@ -83,7 +87,8 @@ never a line number (they drift). Fuzzy → banner:
 - step toggle, acid pitch-drag, mute/solo, pattern state → `app.js` `step sequencer`
 - multi-bar pages (1/2/4, page dots, ÷2/×2) → `app.js` `pages:`; per-step arrays grow to `STEPS * numBars`
 - bottom-grid pixel marquee → `app.js` `idle MOD.WAV marquee`; play/stop (`setPlayingState`) sits just above it
-- modal open/close → `app.js` `modal open/close`; FM popup → `FM per-step popup`; waveform/`resizeCanvas` → `oscilloscope draw`
+- modal open/close → `app.js` `modal open/close`; FM popup → `FM per-step popup`; FX bus popups (delay/reverb internals via right-click on the FX BUS knobs) → `FX bus popups`; waveform/`resizeCanvas` → `oscilloscope draw`
+- nav fade on scroll → `app.js` `nav scroll-fade`
 - bottom-bar CSS → `styles.css` `floating bottom bar`; modal CSS → `synth modal` / `synth panel`; page CSS → `hero` / `nav` / `sections` / `layout shells`
 
 **Keep banners + their code stable (token-cost, not style):** don't rename/churn banners or scatter
