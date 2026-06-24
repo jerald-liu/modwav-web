@@ -135,7 +135,7 @@ function openDelayFxPopup(anchorEl){
   closeFxPopup();
   // sync inputs to current state (in case anything mutated them externally)
   delayFbInput.value = delayFbValue;       delayFbVal.textContent = delayFbValue;
-  delayStepsInput.value = delaySteps;      delayStepsVal.textContent = delaySteps;
+  delayStepsInput.value = delayDivIndex;   delayStepsVal.textContent = DELAY_DIVS[delayDivIndex].label;
   delayToneInput.value = delayTone;        delayToneVal.textContent = delayTone;
   delayFxPopup.hidden = false;
   positionPopupAbove(delayFxPopup, anchorEl);
@@ -160,9 +160,9 @@ delayFbInput.addEventListener('input', ()=>{
   if(delayFbRef) delayFbRef.gain.value = delayFbValue / 100;
 });
 delayStepsInput.addEventListener('input', ()=>{
-  delaySteps = +delayStepsInput.value;
-  delayStepsVal.textContent = delaySteps;
-  if(delayNodeRef) delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * delaySteps, ctx.currentTime, 0.03);
+  delayDivIndex = +delayStepsInput.value;
+  delayStepsVal.textContent = DELAY_DIVS[delayDivIndex].label;
+  if(delayNodeRef) delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * delayMultiplier(), ctx.currentTime, 0.03);
 });
 delayToneInput.addEventListener('input', ()=>{
   delayTone = +delayToneInput.value;
@@ -233,7 +233,22 @@ let delayBusValue = 22;
 let reverbBusValue = 28;
 // Internal FX parameters, surfaced via the right-click popups on the bus knobs.
 let delayFbValue = 42;          // feedback %
-let delaySteps = 3;             // delay time in 16th-note steps (1–8), tempo-locked
+// Delay time is tempo-locked to one of these note divisions. Each entry's
+// `steps` is the multiplier on STEP_SECONDS (one 16th), so 1/32 = half a 16th,
+// 1/16 = one 16th, … 1 = whole note (16 sixteenths).
+const DELAY_DIVS = [
+  { label: '1/32', steps: 0.5 },
+  { label: '1/16', steps: 1   },
+  { label: '1/8',  steps: 2   },
+  { label: '3/16', steps: 3   },
+  { label: '1/4',  steps: 4   },
+  { label: '3/8',  steps: 6   },
+  { label: '1/2',  steps: 8   },
+  { label: '3/4',  steps: 12  },
+  { label: '1',    steps: 16  },
+];
+let delayDivIndex = 3;          // default 3/16 (matches the previous numeric default of 3)
+function delayMultiplier(){ return DELAY_DIVS[delayDivIndex].steps; }
 let delayTone = 3200;           // damping LPF cutoff (Hz)
 let reverbSize = 2.6;           // IR length seconds
 let reverbDecay = 2.8;          // IR decay factor
@@ -718,7 +733,7 @@ function setTempo(bpm){
   STEP_SECONDS = 60 / TEMPO_BPM / 4;
   if(bpmAmtEl.value != bpm) bpmAmtEl.value = bpm;
   if(delayNodeRef && ctx){
-    delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * delaySteps, ctx.currentTime, 0.03);
+    delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * delayMultiplier(), ctx.currentTime, 0.03);
   }
 }
 
@@ -796,8 +811,9 @@ function ensureAudio(){
   // delay bus — dotted-eighth feedback delay. delayBusInput sums each track's send.
   delayBusInput = ctx.createGain();
   delayBusInput.gain.value = 1;
-  const delayNode = ctx.createDelay(2.0);
-  delayNode.delayTime.value = STEP_SECONDS * delaySteps;
+  // max delay time must cover the slowest case: 60 BPM × whole-note = 4 s. 5 s gives headroom.
+  const delayNode = ctx.createDelay(5.0);
+  delayNode.delayTime.value = STEP_SECONDS * delayMultiplier();
   delayNodeRef = delayNode;
   const delayFb = ctx.createGain();
   delayFb.gain.value = delayFbValue / 100;
@@ -1326,8 +1342,8 @@ function buildOfflineGraph(octx, trackIds){
   master.connect(octx.destination);
 
   const delayBusInput = octx.createGain();
-  const delayNode = octx.createDelay(2.0);
-  delayNode.delayTime.value = STEP_SECONDS * delaySteps;
+  const delayNode = octx.createDelay(5.0);
+  delayNode.delayTime.value = STEP_SECONDS * delayMultiplier();
   const delayFb = octx.createGain(); delayFb.gain.value = delayFbValue / 100;
   const delayDamp = octx.createBiquadFilter();
   delayDamp.type = 'lowpass'; delayDamp.frequency.value = delayTone;
