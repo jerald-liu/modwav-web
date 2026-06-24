@@ -167,14 +167,8 @@
     transform: scaleY(1.15);
     transform-origin: left bottom;
   }
-  .hero .sub{
-    font-size: 1.06rem;
-    line-height: 1.55;
-    color: var(--ink-dim);
-    max-width: 34rem;
-    margin: 0 0 2rem;
-  }
-  .hero .sub b{ color: var(--ink); font-weight: 600; }
+  .hero-body{ margin-top: 0.4rem; }
+  .hero-body .lede{ margin-bottom: 0.55rem; }
 
   .meta-row{
     display:flex;
@@ -1026,17 +1020,13 @@
 <section class="hero">
   <p class="eyebrow mono">San Francisco</p>
   <h1><span class="presents">Mod.wav presents:</span><br>Patch &amp; Play —<br>A Community Hardware Jam</h1>
-  <p class="sub">Synths, modular rigs, MIDI controllers, custom-built instruments. Free. A room for building and sharing sound together.</p>
-</section>
-
-<hr class="rule">
-
-<section class="reveal">
-  <p class="lede">Community run live hardware jam.</p>
-  <p class="lede">Bring your own hardware (limit 1 stereo output).</p>
-  <p class="lede">Come with an open mind.</p>
-  <p class="lede">Active-listening is required.</p>
-  <p class="lede">Attendees will receive samples recorded from the performance.</p>
+  <div class="hero-body">
+    <p class="lede">Community run live hardware jam.</p>
+    <p class="lede">Bring your own hardware (limit 1 stereo output).</p>
+    <p class="lede">Come with an open mind.</p>
+    <p class="lede">Active-listening is required.</p>
+    <p class="lede">Attendees will receive samples recorded from the performance.</p>
+  </div>
 </section>
 
 <hr class="rule">
