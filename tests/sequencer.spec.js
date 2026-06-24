@@ -180,3 +180,49 @@ test('BPM input clamps to 60–180', async ({ page }) => {
   await bpm.fill('10');
   await expect(bpm).toHaveValue('60');
 });
+
+// 9 — pages: ×2 / ÷2 change length (1↔2↔4 only), dots reflect it, bounds disabled,
+// and no console errors through the cycle.
+test('pages: double/halve drives 1↔2↔4 with bounded buttons', async ({ page }) => {
+  const errors = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push(String(e)));
+
+  await open(page);
+  const dots = page.locator('#pageDots .page-dot');
+  await expect(dots).toHaveCount(1);
+  await expect(page.locator('#halveBtn')).toBeDisabled(); // can't go below 1 bar
+
+  await page.locator('#doubleBtn').click();
+  await expect(dots).toHaveCount(2);
+  await page.locator('#doubleBtn').click();
+  await expect(dots).toHaveCount(4);
+  await expect(page.locator('#doubleBtn')).toBeDisabled(); // can't exceed 4 bars
+
+  await page.locator('#halveBtn').click();
+  await expect(dots).toHaveCount(2);
+  await page.locator('#halveBtn').click();
+  await expect(dots).toHaveCount(1);
+  await expect(page.locator('#halveBtn')).toBeDisabled();
+
+  expect(errors, `console errors:\n${errors.join('\n')}`).toEqual([]);
+});
+
+// 10 — doubling copies bar 1 into bar 2, and edits are per-bar (independent).
+test('pages: double duplicates the bar, edits stay per-bar', async ({ page }) => {
+  await open(page);
+  const dot = (i) => page.locator('#pageDots .page-dot').nth(i);
+  const hat1 = page.locator('.step[data-track="hat"][data-step="1"]');
+  const isOn = (loc) => loc.evaluate((e) => e.classList.contains('on'));
+
+  await page.locator('#doubleBtn').click();         // bar 2 = copy of bar 1
+  await dot(1).click();                              // view bar 2
+  await expect(dot(1)).toHaveClass(/\bviewing\b/);
+  const copied = await isOn(hat1);                   // bar 2's value (= bar 1's)
+
+  await hat1.click();                                // edit only bar 2
+  expect(await isOn(hat1)).toBe(!copied);
+
+  await dot(0).click();                              // back to bar 1
+  expect(await isOn(hat1)).toBe(copied);             // bar 1 untouched by the bar-2 edit
+});

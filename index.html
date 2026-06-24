@@ -399,6 +399,11 @@
     <canvas id="scope" width="600" height="86"></canvas>
     <div class="seq-toolbar">
       <button type="button" class="unmute-all-btn" id="unmuteAllBtn" title="unmute every muted track (solos unaffected)" aria-label="unmute all">⟲</button>
+      <div class="page-ctrl">
+        <button type="button" class="page-len-btn" id="halveBtn" title="halve length" aria-label="halve length">÷2</button>
+        <div class="page-dots" id="pageDots"></div>
+        <button type="button" class="page-len-btn" id="doubleBtn" title="double length" aria-label="double length">×2</button>
+      </div>
     </div>
     <div class="seq" id="seq"></div>
     <div class="ctrl-row">
@@ -414,7 +419,7 @@
     </div>
     <p class="panel-hint">tap to toggle · drag up/down on acid for pitch · long-press / right-click for FM params</p>
     <div class="export-block">
-      <p class="export-head">Take it home — 4-bar loop</p>
+      <p class="export-head" id="exportHead">Take it home — 1-bar loop</p>
       <div class="export-row">
         <button class="export-btn" id="exportBtn" type="button">Download stems + MIDI</button>
         <span class="export-status mono" id="exportStatus"></span>

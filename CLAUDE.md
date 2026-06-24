@@ -78,8 +78,9 @@ Known intent (not yet built):
 `app.js` and `styles.css` use `/* ---- name ---- */` banners. Grep them for a live, never-stale
 ToC — `grep -n '/\* -' app.js` — then read only that ~80-line region. Search the banner *name*,
 never a line number (they drift). Fuzzy → banner:
-- export / WAV / ZIP / MIDI → `app.js` `export: 4-bar stems`
+- export / WAV / ZIP / MIDI → `app.js` `export: stems`
 - step toggle, acid pitch-drag, mute/solo, pattern state → `app.js` `step sequencer`
+- multi-bar pages (1/2/4, page dots, ÷2/×2) → `app.js` `pages:`; per-step arrays grow to `STEPS * numBars`
 - bottom-grid pixel marquee → `app.js` `idle MOD.WAV marquee`; play/stop (`setPlayingState`) sits just above it
 - modal open/close → `app.js` `modal open/close`; FM popup → `FM per-step popup`; waveform/`resizeCanvas` → `oscilloscope draw`
 - bottom-bar CSS → `styles.css` `floating bottom bar`; modal CSS → `synth modal` / `synth panel`; page CSS → `hero` / `nav` / `sections` / `layout shells`

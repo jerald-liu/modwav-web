@@ -127,7 +127,12 @@ Object.keys(TRACK_SEND_DEFAULTS).forEach(id=>{
   trackSendValues[id] = { ...TRACK_SEND_DEFAULTS[id] };
 });
 
-const STEPS = 16;
+const STEPS = 16;        // steps per bar (page size) — the visual grid is always 16
+const MAX_BARS = 4;
+let numBars = 1;         // sequence length in bars: 1 | 2 | 4
+let currentBar = 0;      // the bar currently viewed/edited in the modal grid
+function totalSteps(){ return STEPS * numBars; }
+function absStep(s){ return currentBar * STEPS + s; } // visual 0–15 → absolute index
 let TEMPO_BPM = 140;
 let STEP_SECONDS = 60 / TEMPO_BPM / 4;
 let delayNodeRef = null;
@@ -265,10 +270,14 @@ TRACKS.forEach((track, ti)=>{
     if(pattern[track.id][s]) btn.classList.add('on');
 
     function toggleStep(){
-      pattern[track.id][s] = pattern[track.id][s] ? 0 : 1;
+      const i = absStep(s);
+      pattern[track.id][i] = pattern[track.id][i] ? 0 : 1;
       btn.classList.toggle('on');
-      const barStep = barSeqEl.querySelector(`.bar-step[data-track="${track.id}"][data-step="${s}"]`);
-      if(barStep) barStep.classList.toggle('on');
+      // mirror to the mini-grid only if it's currently showing this (edited) bar
+      if(miniGridBar === currentBar){
+        const barStep = barSeqEl.querySelector(`.bar-step[data-track="${track.id}"][data-step="${s}"]`);
+        if(barStep) barStep.classList.toggle('on', !!pattern[track.id][i]);
+      }
     }
 
     if(track.id === 'acid'){
@@ -276,7 +285,7 @@ TRACKS.forEach((track, ti)=>{
       btn.classList.add('step-pitch');
       const noteLabel = document.createElement('span');
       noteLabel.className = 'note-name mono';
-      noteLabel.textContent = noteName(ACID_NOTES[s]);
+      noteLabel.textContent = noteName(ACID_NOTES[absStep(s)]);
       btn.appendChild(noteLabel);
 
       let dragging = false, axis = null, moved = false;
@@ -289,9 +298,9 @@ TRACKS.forEach((track, ti)=>{
         if(e.button !== 0) return; // ignore right/middle click — contextmenu handles it
         dragging = true; axis = null; moved = false; longPressed = false;
         startX = e.clientX; startY = e.clientY;
-        startNote = ACID_NOTES[s];
+        startNote = ACID_NOTES[absStep(s)];
         longPressTimer = setTimeout(()=>{
-          if(!moved){ longPressed = true; openFMPopup(s, btn); }
+          if(!moved){ longPressed = true; openFMPopup(absStep(s), btn); }
         }, 450);
       });
       btn.addEventListener('pointermove', (e)=>{
@@ -314,8 +323,9 @@ TRACKS.forEach((track, ti)=>{
         if(axis !== 'y') return;
         const semis = Math.round((startY - e.clientY) / PX_PER_SEMITONE);
         const next = Math.max(ACID_NOTE_MIN, Math.min(ACID_NOTE_MAX, startNote + semis));
-        if(next !== ACID_NOTES[s]){
-          ACID_NOTES[s] = next;
+        const i = absStep(s);
+        if(next !== ACID_NOTES[i]){
+          ACID_NOTES[i] = next;
           noteLabel.textContent = noteName(next);
         }
         e.preventDefault();
@@ -335,7 +345,7 @@ TRACKS.forEach((track, ti)=>{
       });
       btn.addEventListener('contextmenu', (e)=>{
         e.preventDefault();
-        openFMPopup(s, btn);
+        openFMPopup(absStep(s), btn);
       });
     } else {
       btn.addEventListener('click', toggleStep);
@@ -376,6 +386,96 @@ TRACKS.forEach((track, ti)=>{
   sends.appendChild(labelTag('R', reverbKnob));
   seqEl.appendChild(sends);
 });
+
+/* ---- pages: 1/2/4-bar length + page navigation ---- */
+// The five per-step arrays grow/shrink to STEPS * numBars. The visual grid is
+// always 16 steps showing currentBar; the mini-grid shows whichever bar is
+// playing (during playback) or being edited (when stopped).
+const PLOCK_ARRAYS = () => [pattern.kick, pattern.snare, pattern.hat, pattern.acid, ACID_NOTES, ACID_ACCENT, FM_RATIO, FM_INDEX];
+let miniGridBar = 0;   // which bar the bottom mini-grid currently displays
+let playingBar = -1;   // bar the scheduler is currently on (-1 when stopped)
+
+const pageDotsEl = document.getElementById('pageDots');
+const halveBtn = document.getElementById('halveBtn');
+const doubleBtn = document.getElementById('doubleBtn');
+const exportHeadEl = document.getElementById('exportHead');
+
+// re-sync the bottom mini-grid's on/off to a given bar's slice
+function renderMiniGrid(bar){
+  miniGridBar = bar;
+  document.querySelectorAll('#barSeq .bar-step').forEach(el=>{
+    const id = el.dataset.track;
+    const s = +el.dataset.step;
+    el.classList.toggle('on', !!pattern[id][bar * STEPS + s]);
+  });
+}
+
+// re-sync the 16 visual modal buttons (+ acid note labels) to currentBar
+function renderPage(){
+  document.querySelectorAll('#seq .step').forEach(btn=>{
+    const track = btn.dataset.track;
+    const s = +btn.dataset.step;
+    const i = currentBar * STEPS + s;
+    btn.classList.toggle('on', !!pattern[track][i]);
+    if(track === 'acid'){
+      const lbl = btn.querySelector('.note-name');
+      if(lbl) lbl.textContent = noteName(ACID_NOTES[i]);
+    }
+  });
+  renderPageDots();
+  if(!running) renderMiniGrid(currentBar);
+}
+
+function renderPageDots(){
+  pageDotsEl.replaceChildren();
+  for(let b=0; b<numBars; b++){
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'page-dot';
+    dot.dataset.bar = b;
+    dot.title = `bar ${b + 1}`;
+    if(b === currentBar) dot.classList.add('viewing');
+    if(b === playingBar) dot.classList.add('playing');
+    dot.addEventListener('click', ()=>setCurrentBar(b));
+    pageDotsEl.appendChild(dot);
+  }
+  halveBtn.disabled = numBars <= 1;
+  doubleBtn.disabled = numBars >= MAX_BARS;
+  if(exportHeadEl) exportHeadEl.textContent = `Take it home — ${numBars}-bar loop`;
+}
+
+// reflect the playing bar on the dots without rebuilding them
+function updatePlayingDots(){
+  pageDotsEl.querySelectorAll('.page-dot').forEach(dot=>{
+    dot.classList.toggle('playing', +dot.dataset.bar === playingBar);
+  });
+}
+
+function setCurrentBar(b){
+  if(b < 0 || b >= numBars || b === currentBar) return;
+  currentBar = b;
+  renderPage();
+}
+
+function doubleLength(){
+  if(numBars >= MAX_BARS) return;
+  // duplicate every per-step array in place: [bar1] -> [bar1, copy-of-bar1]
+  PLOCK_ARRAYS().forEach(a=>{ const n = a.length; for(let k=0;k<n;k++) a.push(a[k]); });
+  numBars *= 2;
+  renderPage();
+}
+
+function halveLength(){
+  if(numBars <= 1) return;
+  PLOCK_ARRAYS().forEach(a=>{ a.length = a.length / 2; });
+  numBars /= 2;
+  if(currentBar >= numBars) currentBar = numBars - 1;
+  renderPage();
+}
+
+halveBtn.addEventListener('click', halveLength);
+doubleBtn.addEventListener('click', doubleLength);
+renderPageDots();
 
 function updateScrollEdges(el, frame){
   const target = frame || el.parentElement;
@@ -769,19 +869,26 @@ function scheduleStep(stepIndex, time){
 }
 
 function highlightPlayhead(stepIndex){
-  // modal grid
+  const bar = Math.floor(stepIndex / STEPS);
+  const visual = stepIndex % STEPS;
+  // mini-grid + page dots follow the bar currently playing
+  if(bar !== miniGridBar) renderMiniGrid(bar);
+  if(bar !== playingBar){ playingBar = bar; updatePlayingDots(); }
+  // modal grid: only light up when the playing bar is the one being viewed
   document.querySelectorAll('.step.playhead').forEach(el=>el.classList.remove('playhead'));
-  document.querySelectorAll(`.step[data-step="${stepIndex}"]`).forEach(el=>el.classList.add('playhead'));
+  if(bar === currentBar){
+    document.querySelectorAll(`.step[data-step="${visual}"]`).forEach(el=>el.classList.add('playhead'));
+  }
   // bar mini grid
   document.querySelectorAll('.bar-step.playhead').forEach(el=>el.classList.remove('playhead'));
-  document.querySelectorAll(`.bar-step[data-step="${stepIndex}"]`).forEach(el=>el.classList.add('playhead'));
+  document.querySelectorAll(`.bar-step[data-step="${visual}"]`).forEach(el=>el.classList.add('playhead'));
 }
 
 function schedulerLoop(){
   while(nextStepTime < ctx.currentTime + SCHEDULE_AHEAD){
     scheduleStep(currentStep, nextStepTime);
     nextStepTime += STEP_SECONDS;
-    currentStep = (currentStep + 1) % STEPS;
+    currentStep = (currentStep + 1) % totalSteps();
   }
   schedulerTimer = setTimeout(schedulerLoop, 25);
 }
@@ -796,6 +903,9 @@ function stopSequencer(){
   if(schedulerTimer) clearTimeout(schedulerTimer);
   document.querySelectorAll('.step.playhead').forEach(el=>el.classList.remove('playhead'));
   document.querySelectorAll('.bar-step.playhead').forEach(el=>el.classList.remove('playhead'));
+  playingBar = -1;
+  updatePlayingDots();
+  renderMiniGrid(currentBar); // mini-grid returns to the edited page
 }
 
 function setPlayingState(isPlaying){
@@ -868,11 +978,8 @@ function renderMarqueeFrame(){
   }
 }
 function restoreBarFromPattern(){
-  document.querySelectorAll('#barSeq .bar-step').forEach(el=>{
-    const id = el.dataset.track;
-    const s = +el.dataset.step;
-    el.classList.toggle('on', !!pattern[id][s]);
-  });
+  // marquee only runs while stopped, so restore the edited page
+  renderMiniGrid(currentBar);
 }
 function startMarquee(){
   if(marqueeTimer || running) return;
@@ -991,8 +1098,7 @@ function loop(t){
 }
 requestAnimationFrame(loop);
 
-/* ---------------- export: 4-bar stems + mix + MIDI ---------------- */
-const EXPORT_BARS = 4;
+/* ---------------- export: stems + mix + MIDI (actual 1/2/4-bar length) ---------------- */
 const EXPORT_SR = 44100;
 
 // rebuild the live FX topology (per-track gain + delay/reverb buses) inside an
@@ -1040,24 +1146,23 @@ function buildOfflineGraph(octx, trackIds){
 }
 
 async function renderLoop(trackIds){
-  const totalSteps = STEPS * EXPORT_BARS;
+  const stepCount = totalSteps();
   const startPad = 0.02;
-  const loopLen = totalSteps * STEP_SECONDS;
+  const loopLen = stepCount * STEP_SECONDS;
   const tail = 2.0; // let delay/reverb tails ring out
   const length = Math.ceil(EXPORT_SR * (startPad + loopLen + tail));
   const octx = new OfflineAudioContext(2, length, EXPORT_SR);
   const gains = buildOfflineGraph(octx, trackIds);
 
-  for(let step=0; step<totalSteps; step++){
-    const sIdx = step % STEPS;
+  for(let step=0; step<stepCount; step++){
     const t = startPad + step * STEP_SECONDS;
     trackIds.forEach(id=>{
       if(id === 'acid'){
-        if(pattern.acid[sIdx]){
+        if(pattern.acid[step]){
           const voice = acidInstrument === 'fm' ? playFM : playAcid;
-          voice(octx, t, sIdx, gains.acid);
+          voice(octx, t, step, gains.acid);
         }
-      } else if(pattern[id][sIdx]){
+      } else if(pattern[id][step]){
         VOICES[id](octx, t, gains[id]);
       }
     });
@@ -1155,11 +1260,11 @@ function buildZip(files){
   return new Blob([...localParts, ...central, eocd], { type: 'application/zip' });
 }
 
-// Standard MIDI File (format 1): drums on ch10, acid melodic on ch1, 4 bars
+// Standard MIDI File (format 1): drums on ch10, acid melodic on ch1, 1/2/4 bars
 function buildMidi(){
   const TPQ = 480;
   const stepTicks = TPQ / 4; // 16th note
-  const totalSteps = STEPS * EXPORT_BARS;
+  const stepCount = totalSteps();
   const DRUM_CH = 9, ACID_CH = 0;
   const DRUM_NOTE = { kick: 36, snare: 38, hat: 42 };
 
@@ -1199,8 +1304,8 @@ function buildMidi(){
   ['kick','snare','hat'].forEach(id=>{
     const note = DRUM_NOTE[id];
     const events = [];
-    for(let step=0; step<totalSteps; step++){
-      if(pattern[id][step % STEPS]){
+    for(let step=0; step<stepCount; step++){
+      if(pattern[id][step]){
         const onTick = step * stepTicks;
         events.push({ tick:onTick, order:1, data:[0x90|DRUM_CH, note, 100] });
         events.push({ tick:onTick + Math.floor(stepTicks*0.5), order:0, data:[0x80|DRUM_CH, note, 0] });
@@ -1211,13 +1316,12 @@ function buildMidi(){
 
   {
     const events = [];
-    for(let step=0; step<totalSteps; step++){
-      const sIdx = step % STEPS;
-      if(pattern.acid[sIdx]){
-        const note = ACID_NOTES[sIdx];
-        const accent = !!ACID_ACCENT[sIdx];
+    for(let step=0; step<stepCount; step++){
+      if(pattern.acid[step]){
+        const note = ACID_NOTES[step];
+        const accent = !!ACID_ACCENT[step];
         const onTick = step * stepTicks;
-        const nextActive = !!pattern.acid[(sIdx + 1) % STEPS];
+        const nextActive = !!pattern.acid[(step + 1) % stepCount];
         const gate = nextActive ? stepTicks : Math.floor(stepTicks * 0.9);
         events.push({ tick:onTick, order:1, data:[0x90|ACID_CH, note, accent?115:85] });
         events.push({ tick:onTick + gate, order:0, data:[0x80|ACID_CH, note, 0] });
@@ -1239,11 +1343,12 @@ function buildMidi(){
 
 function exportReadme(){
   const bpm = Math.round(TEMPO_BPM);
+  const barWord = numBars === 1 ? '1-bar' : `${numBars}-bar`;
   return new TextEncoder().encode(
-`mod.wav — your 4-bar loop
+`mod.wav — your ${barWord} loop
 ==========================
 
-Rendered live from the signal generator. ${bpm} BPM, ${EXPORT_BARS} bars.
+Rendered live from the signal generator. ${bpm} BPM, ${numBars} ${numBars === 1 ? 'bar' : 'bars'}.
 Acid voice: ${acidInstrument.toUpperCase()}.
 
 stems/   per-track WAV stems (kick, snare, hat, acid) — drop into any DAW
