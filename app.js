@@ -120,69 +120,53 @@ document.addEventListener('keydown', (e)=>{
 /* ---------------- FX bus popups (right-click on the FX BUS knobs) ---------------- */
 const delayFxPopup = document.getElementById('delayFxPopup');
 const reverbFxPopup = document.getElementById('reverbFxPopup');
-const delayFbInput = document.getElementById('delayFbInput');
-const delayStepsInput = document.getElementById('delayStepsInput');
-const delayToneInput = document.getElementById('delayToneInput');
-const delayFbVal = document.getElementById('delayFbVal');
-const delayStepsVal = document.getElementById('delayStepsVal');
-const delayToneVal = document.getElementById('delayToneVal');
-const reverbSizeInput = document.getElementById('reverbSizeInput');
-const reverbDecayInput = document.getElementById('reverbDecayInput');
-const reverbSizeVal = document.getElementById('reverbSizeVal');
-const reverbDecayVal = document.getElementById('reverbDecayVal');
 
-function openDelayFxPopup(anchorEl){
+// One row per slider in an FX popup. fmt(v) → label text · cur() → current
+// state for popup-open sync · apply(v) → push to the live audio graph.
+// Adding a new param = appending one row.
+const FX_BINDINGS = [
+  { popup: delayFxPopup,  inputId: 'delayFbInput',     valId: 'delayFbVal',     fmt: v => v,                   cur: () => delayFbValue,
+    apply: v => { delayFbValue = v; if(delayFbRef) delayFbRef.gain.value = v / 100; } },
+  { popup: delayFxPopup,  inputId: 'delayStepsInput',  valId: 'delayStepsVal',  fmt: v => DELAY_DIVS[v].label, cur: () => delayDivIndex,
+    apply: v => { delayDivIndex = v; if(delayNodeRef) delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * delayMultiplier(), ctx.currentTime, 0.03); } },
+  { popup: delayFxPopup,  inputId: 'delayToneInput',   valId: 'delayToneVal',   fmt: v => v,                   cur: () => delayTone,
+    apply: v => { delayTone = v; if(delayDampRef) delayDampRef.frequency.setTargetAtTime(v, ctx.currentTime, 0.03); } },
+  { popup: reverbFxPopup, inputId: 'reverbSizeInput',  valId: 'reverbSizeVal',  fmt: v => v.toFixed(1),        cur: () => reverbSize,
+    apply: v => { reverbSize = v; if(reverbConvolverRef) reverbConvolverRef.buffer = makeImpulseResponse(ctx, reverbSize, reverbDecay); } },
+  { popup: reverbFxPopup, inputId: 'reverbDecayInput', valId: 'reverbDecayVal', fmt: v => v.toFixed(1),        cur: () => reverbDecay,
+    apply: v => { reverbDecay = v; if(reverbConvolverRef) reverbConvolverRef.buffer = makeImpulseResponse(ctx, reverbSize, reverbDecay); } },
+].map(b => {
+  b.input = document.getElementById(b.inputId);
+  b.val   = document.getElementById(b.valId);
+  b.input.addEventListener('input', () => {
+    const v = +b.input.value;
+    b.val.textContent = b.fmt(v);
+    b.apply(v);
+  });
+  return b;
+});
+
+function openFxPopup(popup, anchorEl){
   closeFxPopup();
-  // sync inputs to current state (in case anything mutated them externally)
-  delayFbInput.value = delayFbValue;       delayFbVal.textContent = delayFbValue;
-  delayStepsInput.value = delayDivIndex;   delayStepsVal.textContent = DELAY_DIVS[delayDivIndex].label;
-  delayToneInput.value = delayTone;        delayToneVal.textContent = delayTone;
-  delayFxPopup.hidden = false;
-  positionPopupAbove(delayFxPopup, anchorEl);
-}
-function openReverbFxPopup(anchorEl){
-  closeFxPopup();
-  reverbSizeInput.value = reverbSize;      reverbSizeVal.textContent = reverbSize.toFixed(1);
-  reverbDecayInput.value = reverbDecay;    reverbDecayVal.textContent = reverbDecay.toFixed(1);
-  reverbFxPopup.hidden = false;
-  positionPopupAbove(reverbFxPopup, anchorEl);
+  FX_BINDINGS.forEach(b => {
+    if(b.popup !== popup) return;
+    const v = b.cur();
+    b.input.value = v;
+    b.val.textContent = b.fmt(v);
+  });
+  popup.hidden = false;
+  positionPopupAbove(popup, anchorEl);
 }
 function closeFxPopup(){
   delayFxPopup.hidden = true;
   reverbFxPopup.hidden = true;
 }
-document.getElementById('delayFxClose').addEventListener('click', closeFxPopup);
-document.getElementById('reverbFxClose').addEventListener('click', closeFxPopup);
+[delayFxPopup, reverbFxPopup].forEach(p =>
+  p.querySelector('.fm-popup-close').addEventListener('click', closeFxPopup));
 
-delayFbInput.addEventListener('input', ()=>{
-  delayFbValue = +delayFbInput.value;
-  delayFbVal.textContent = delayFbValue;
-  if(delayFbRef) delayFbRef.gain.value = delayFbValue / 100;
-});
-delayStepsInput.addEventListener('input', ()=>{
-  delayDivIndex = +delayStepsInput.value;
-  delayStepsVal.textContent = DELAY_DIVS[delayDivIndex].label;
-  if(delayNodeRef) delayNodeRef.delayTime.setTargetAtTime(STEP_SECONDS * delayMultiplier(), ctx.currentTime, 0.03);
-});
-delayToneInput.addEventListener('input', ()=>{
-  delayTone = +delayToneInput.value;
-  delayToneVal.textContent = delayTone;
-  if(delayDampRef) delayDampRef.frequency.setTargetAtTime(delayTone, ctx.currentTime, 0.03);
-});
-reverbSizeInput.addEventListener('input', ()=>{
-  reverbSize = +reverbSizeInput.value;
-  reverbSizeVal.textContent = reverbSize.toFixed(1);
-  if(reverbConvolverRef) reverbConvolverRef.buffer = makeImpulseResponse(ctx, reverbSize, reverbDecay);
-});
-reverbDecayInput.addEventListener('input', ()=>{
-  reverbDecay = +reverbDecayInput.value;
-  reverbDecayVal.textContent = reverbDecay.toFixed(1);
-  if(reverbConvolverRef) reverbConvolverRef.buffer = makeImpulseResponse(ctx, reverbSize, reverbDecay);
-});
-
-// outside-click closes any open FX popup. don't close on clicks targeting the
-// bus knobs themselves (those right-clicks re-open via contextmenu).
-document.addEventListener('pointerdown', (e)=>{
+// outside-click closes any open FX popup; right-clicks on the bus knobs
+// re-open via contextmenu, so don't treat those clicks as "outside".
+document.addEventListener('pointerdown', (e) => {
   if(delayFxPopup.hidden && reverbFxPopup.hidden) return;
   if(delayFxPopup.contains(e.target) || reverbFxPopup.contains(e.target)) return;
   if(e.target.closest && e.target.closest('.seq-bus-sends .knob')) return;
@@ -197,8 +181,6 @@ let running = false;
 let droneNodes = [];
 let delayReturn = null;
 let reverbReturn = null;
-let delayBusInput = null;
-let reverbBusInput = null;
 const trackGains = {};
 const trackDelaySends = {};
 const trackReverbSends = {};
@@ -517,23 +499,20 @@ TRACKS.forEach((track, ti)=>{
   }, 'reverb return level (right-click for FX params)');
   // right-click opens the bus's internal-params popup (FB/STEPS/TONE for delay;
   // SIZE/DECAY for reverb). long-press on touch fires the same popup.
-  function attachFxRightClick(knob, opener){
-    knob.addEventListener('contextmenu', (e)=>{
-      e.preventDefault();
-      opener(knob);
-    });
+  function attachFxRightClick(knob, popup){
+    const open = () => openFxPopup(popup, knob);
+    knob.addEventListener('contextmenu', e => { e.preventDefault(); open(); });
     let lpTimer = null;
-    knob.addEventListener('pointerdown', (e)=>{
-      if(e.pointerType !== 'touch') return;
-      lpTimer = setTimeout(()=>{ opener(knob); lpTimer = null; }, 450);
+    knob.addEventListener('pointerdown', e => {
+      if(e.pointerType === 'touch') lpTimer = setTimeout(open, 450);
     });
-    const clearLP = ()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; } };
+    const clearLP = () => { if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; } };
     knob.addEventListener('pointerup', clearLP);
     knob.addEventListener('pointercancel', clearLP);
     knob.addEventListener('pointermove', clearLP);
   }
-  attachFxRightClick(delayBusKnob, openDelayFxPopup);
-  attachFxRightClick(reverbBusKnob, openReverbFxPopup);
+  attachFxRightClick(delayBusKnob, delayFxPopup);
+  attachFxRightClick(reverbBusKnob, reverbFxPopup);
   busSends.appendChild(delayBusKnob);
   busSends.appendChild(reverbBusKnob);
   seqEl.appendChild(busSends);
@@ -809,7 +788,7 @@ function ensureAudio(){
   masterGain.connect(analyser);
 
   // delay bus — dotted-eighth feedback delay. delayBusInput sums each track's send.
-  delayBusInput = ctx.createGain();
+  const delayBusInput = ctx.createGain();
   delayBusInput.gain.value = 1;
   // max delay time must cover the slowest case: 60 BPM × whole-note = 4 s. 5 s gives headroom.
   const delayNode = ctx.createDelay(5.0);
@@ -832,7 +811,7 @@ function ensureAudio(){
   delayReturn.connect(analyser);
 
   // reverb bus — algorithmic impulse response. reverbBusInput sums each track's send.
-  reverbBusInput = ctx.createGain();
+  const reverbBusInput = ctx.createGain();
   reverbBusInput.gain.value = 1;
   const reverb = ctx.createConvolver();
   reverb.buffer = makeImpulseResponse(ctx, reverbSize, reverbDecay);
