@@ -808,7 +808,7 @@
 
   /* acid pitch steps: drag up/down to retune */
   .step-pitch{
-    touch-action: none;
+    touch-action: pan-x;
     cursor: ns-resize;
     display: flex;
     align-items: center;
@@ -1405,41 +1405,56 @@ TRACKS.forEach((track, ti)=>{
       noteLabel.textContent = noteName(ACID_NOTES[s]);
       btn.appendChild(noteLabel);
 
-      let dragging = false, moved = false, startY = 0, startNote = 0;
+      let dragging = false, axis = null, moved = false;
+      let startX = 0, startY = 0, startNote = 0;
       let longPressTimer = null, longPressed = false;
       const PX_PER_SEMITONE = 8;
+      const AXIS_THRESHOLD = 6;
 
       btn.addEventListener('pointerdown', (e)=>{
         if(e.button !== 0) return; // ignore right/middle click — contextmenu handles it
-        dragging = true; moved = false; longPressed = false;
-        startY = e.clientY;
+        dragging = true; axis = null; moved = false; longPressed = false;
+        startX = e.clientX; startY = e.clientY;
         startNote = ACID_NOTES[s];
-        try { btn.setPointerCapture(e.pointerId); } catch(_){}
         longPressTimer = setTimeout(()=>{
           if(!moved){ longPressed = true; openFMPopup(s, btn); }
         }, 450);
-        e.preventDefault();
       });
       btn.addEventListener('pointermove', (e)=>{
         if(!dragging) return;
-        const dy = startY - e.clientY;
-        if(Math.abs(dy) > 3){
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if(axis === null){
+          if(Math.abs(dx) < AXIS_THRESHOLD && Math.abs(dy) < AXIS_THRESHOLD) return;
+          axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
           moved = true;
           if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer = null; }
+          if(axis === 'y'){
+            try { btn.setPointerCapture(e.pointerId); } catch(_){}
+          } else {
+            // committed to horizontal scroll — release the gesture to the row
+            dragging = false;
+            return;
+          }
         }
-        const semis = Math.round(dy / PX_PER_SEMITONE);
+        if(axis !== 'y') return;
+        const semis = Math.round((startY - e.clientY) / PX_PER_SEMITONE);
         const next = Math.max(ACID_NOTE_MIN, Math.min(ACID_NOTE_MAX, startNote + semis));
         if(next !== ACID_NOTES[s]){
           ACID_NOTES[s] = next;
           noteLabel.textContent = noteName(next);
         }
+        e.preventDefault();
       });
       btn.addEventListener('pointerup', (e)=>{
-        if(!dragging) return;
-        dragging = false;
         if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer = null; }
+        dragging = false;
         try { btn.releasePointerCapture(e.pointerId); } catch(_){}
         if(!moved && !longPressed) toggleStep();
+      });
+      btn.addEventListener('pointercancel', ()=>{
+        if(longPressTimer){ clearTimeout(longPressTimer); longPressTimer = null; }
+        dragging = false; axis = null;
       });
       btn.addEventListener('contextmenu', (e)=>{
         e.preventDefault();
