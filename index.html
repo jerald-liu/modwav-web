@@ -154,19 +154,17 @@
     margin: 0 0 1.2rem;
     font-weight: 400;
   }
+  .hero h1{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4em 0.5em; }
   .hero h1 .presents{
-    display: block;
     font-family: 'Arial Narrow', Arial, sans-serif;
     font-style: italic;
     font-weight: 400;
-    font-size: 0.7em;
+    font-size: 0.55em;
     letter-spacing: 0.01em;
     color: var(--ink-dim);
-    margin-bottom: -0.7em;
-    line-height: 0.9;
-    transform: scaleY(1.15);
-    transform-origin: left bottom;
+    line-height: 1;
   }
+  .hero h1 .title-main{ white-space: nowrap; }
   .hero-body{ margin-top: 0.4rem; }
   .hero-body .lede{ margin-bottom: 0.55rem; }
 
@@ -1019,7 +1017,7 @@
 <!-- ================= HERO ================= -->
 <section class="hero">
   <p class="eyebrow mono">San Francisco</p>
-  <h1><span class="presents">Mod.wav presents:</span><br>Patch &amp; Play —<br>A Community Hardware Jam</h1>
+  <h1><span class="presents">Mod.wav presents:</span> <span class="title-main">Patch &amp; Play</span></h1>
   <div class="hero-body">
     <p class="lede">Community run live hardware jam.</p>
     <p class="lede">Bring your own hardware (limit 1 stereo output).</p>
