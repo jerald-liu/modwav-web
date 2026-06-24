@@ -365,10 +365,14 @@
   body{ position: relative; overflow-x: hidden; }
   .circuit-bg{
     position: absolute;
-    /* span the full page height; the SVG (meet) shows the whole diagram scaled
+    /* start just below the waveform band (#bgScope spans 3vh–12vh) so the wave
+       owns the top of the page; the SVG (meet) shows the whole diagram scaled
        to fit, and the mask fades it out at top + bottom so it never hard-cuts
        against the waveform above or the footer separator below. */
-    inset: 0 0 0 auto;
+    top: 13vh;
+    right: 0;
+    bottom: 0;
+    left: auto;
     width: 46%;
     z-index: 0;
     pointer-events: none;
