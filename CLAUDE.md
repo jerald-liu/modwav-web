@@ -61,25 +61,32 @@ Known intent (not yet built):
 
 ## Tech & constraints
 
-- **Zero-build, single static file.** Everything lives in `index.html` (HTML + inline CSS + JS).
-  No bundler, no framework, **no runtime dependencies** — the WAV/ZIP/CRC32/MIDI export is
-  hand-rolled on purpose. Keep it dependency-free.
+- **Zero-build, no framework, no runtime dependencies.** The site ships three static files:
+  `index.html` (markup + the inline circuit `<svg>`), `styles.css`, and `app.js` (linked via
+  `<link>` and `<script src="app.js" defer>`). No bundler — the browser loads them directly.
+  The WAV/ZIP/CRC32/MIDI export is hand-rolled on purpose. Keep the shipped site dependency-free.
+  (The Playwright tooling in `package.json` is dev-only and never served — see Workflow.)
 - **Deploy:** GitHub Pages serves `main` branch root. Merging/pushing to `main` publishes live
   at https://jerald-liu.github.io/modwav-web/ (~30s rebuild).
 - **Audio:** voice functions take an explicit `AudioContext` first arg — `playKick(ctx, t, dest)`,
   `playAcid(ctx, t, stepIndex, sliding, dest)`, etc. — so the same code renders live and in an
   `OfflineAudioContext` for export. Preserve this signature.
-- **Circuit background** is a hand-placed inline `<svg>` (coordinates are manual). Editing it
-  means moving real numbers; there's no generator.
-- `index.html` is large (~2,800 lines). A future split into `index.html` + `styles.css` +
-  `app.js` is on the table to cut read cost — not done yet.
+- **Circuit background** is a hand-placed inline `<svg>` in `index.html` (coordinates are manual).
+  Editing it means moving real numbers; there's no generator.
 
 ## Workflow
 
+- **You MUST run the smoke tests before committing any change to `index.html`, `styles.css`,
+  or `app.js`.** Run `npm test` (one-time setup: `npm install && npx playwright install chromium`).
+  All tests must pass before you commit. They cover both viewports, guard against console errors
+  (a stray null lookup once silently halted all JS), and confirm the sequencer grid + scope render
+  and the modal opens. If a change legitimately alters behavior the tests assert, update the tests
+  in the same commit — never delete an assertion to make it pass.
+- **Do NOT use agentic Chrome / browser-automation integrations** (e.g. claude-in-chrome,
+  computer-use) for verifying this site. The Playwright smoke tests are the verification path and
+  should suffice. Only reach for a live browser integration if the smoke-test framework genuinely
+  can't express what's being checked — and if that happens, prefer adding a Playwright assertion.
+- The preview server + screenshots are fine for *iterating* on visuals, but `npm test` is the
+  gate before commit. **Always check both mobile and desktop** (the 720px breakpoint flips layout).
 - **Push to main directly.** Commit and push straight to main; no PR/branch unless asked.
-- **Verify in preview before committing visual changes** — use the preview server and screenshot.
-  **Always check both mobile and desktop** (the 720px breakpoint flips layout); they diverge often.
 - End commit messages with the standard `Co-Authored-By` trailer.
-- *Considering:* lightweight headless-browser (Playwright) smoke tests for mobile+desktop so
-  visual verification isn't manual every time. Not set up yet — adds dev-only tooling (no runtime
-  dep impact). Propose before building.
