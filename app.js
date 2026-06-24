@@ -1,12 +1,3 @@
-/* ---------------- scroll reveal ---------------- */
-const revealEls = document.querySelectorAll('.reveal');
-const io = new IntersectionObserver((entries)=>{
-  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('in'); });
-}, { threshold: 0.15 });
-revealEls.forEach(el=>io.observe(el));
-
-document.getElementById('year')?.replaceChildren(document.createTextNode(new Date().getFullYear()));
-
 /* ---------------- modal open/close ---------------- */
 const synthBar = document.getElementById('synthBar');
 const synthOverlay = document.getElementById('synthOverlay');
