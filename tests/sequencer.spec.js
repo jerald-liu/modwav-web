@@ -258,3 +258,35 @@ test('pages: stop → next play always restarts at bar 1', async ({ page }) => {
 
   await page.locator('#synthToggle').click(); // clean up
 });
+
+// 12 — mini-grid is a passive display of the bar the playhead is in.
+// Modal controls the playhead (stop resets it to bar 0); mini-grid follows.
+// Viewing a different bar via the page dots must NOT move the mini-grid.
+test('pages: mini-grid follows the playhead, not the viewed bar', async ({ page }) => {
+  await open(page);
+  // Set up a discriminator: edit bar 2's kick step 1 so it differs from bar 1's.
+  await page.locator('#doubleBtn').click();                  // 2 bars
+  const dot = (i) => page.locator('#pageDots .page-dot').nth(i);
+  await dot(1).click();                                       // view bar 2
+  await page.locator('.step[data-track="kick"][data-step="1"]').click(); // bar 2's kick[1] = 1
+
+  // bar-step that mirrors kick step 1: on → bar 2 is shown; off → bar 1.
+  const miniKick1On = () =>
+    page.locator('#barSeq .bar-step[data-track="kick"][data-step="1"]')
+      .evaluate((e) => e.classList.contains('on'));
+
+  // Before any playback: mini-grid is on bar 1 even though we're viewing bar 2.
+  expect(await miniKick1On()).toBe(false);
+
+  // Play into bar 2; mini-grid follows.
+  await page.locator('#synthToggle').click();
+  await expect.poll(miniKick1On, { timeout: 4000, intervals: [100] }).toBe(true);
+
+  // Stop snaps the playhead (and mini-grid) back to bar 1.
+  await page.locator('#synthToggle').click();
+  await expect.poll(miniKick1On, { timeout: 1000 }).toBe(false);
+
+  // Viewing bar 2 again does NOT move the mini-grid.
+  await dot(1).click();
+  expect(await miniKick1On()).toBe(false);
+});

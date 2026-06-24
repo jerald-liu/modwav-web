@@ -479,14 +479,10 @@ function halveLengthNow(){
   PLOCK_ARRAYS().forEach(a=>{ a.length = a.length / 2; });
   numBars /= 2;
   if(currentBar >= numBars) currentBar = numBars - 1;
-  // If the bar the mini-grid was showing got removed, snap it to the last
-  // valid bar and repaint — that's the only case where halve changes what
-  // the mini-grid should display.
-  if(miniGridBar >= numBars){
-    miniGridBar = numBars - 1;
-    renderMiniGrid(miniGridBar);
-  }
   renderPage();
+  // No mini-grid clamping needed: while playing, the scheduler's modulo on the
+  // new totalSteps + highlightPlayhead handles the transition; while stopped,
+  // the mini-grid is always on bar 0 (playhead reset), which halve never removes.
 }
 
 function setPendingLengthChange(action){
@@ -947,7 +943,10 @@ function schedulerLoop(){
 }
 
 function startSequencer(){
-  currentStep = 0;
+  // currentStep is set to 0 by stopSequencer (or initialization), so playback
+  // always begins at bar 1 step 1. The playhead "lives" at currentStep; the
+  // modal controls move it (stop → reset, play → advance), and the mini-grid
+  // is a passive display of whichever bar the playhead is in.
   nextStepTime = ctx.currentTime + 0.05;
   schedulerLoop();
 }
@@ -956,9 +955,11 @@ function stopSequencer(){
   if(schedulerTimer) clearTimeout(schedulerTimer);
   document.querySelectorAll('.step.playhead').forEach(el=>el.classList.remove('playhead'));
   document.querySelectorAll('.bar-step.playhead').forEach(el=>el.classList.remove('playhead'));
+  // Stop resets the playhead to bar 0 step 0; mini-grid follows.
+  currentStep = 0;
   playingBar = -1;
   updatePlayingDots();
-  // mini-grid stays on the last-played bar — no re-render
+  if(miniGridBar !== 0) renderMiniGrid(0); else miniGridBar = 0;
   clearPendingLengthChange(); // a queued change is canceled when you stop
 }
 
