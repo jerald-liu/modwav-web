@@ -494,7 +494,14 @@
   }
   .seq-toolbar .unmute-all-btn{ justify-self: end; margin-right: 26px; }
   @media (max-width: 720px){
-    .seq-toolbar{ gap: 0.35rem 0.45rem; }
+    .seq-toolbar{
+      grid-template-columns: 110px 1fr 40px;
+      gap: 0.35rem 0.4rem;
+    }
+    .seq-toolbar .unmute-all-btn{
+      width: 18px; height: 18px; font-size: 0.8rem;
+      margin-right: 21px; /* S width (18) + gap (3) — keep icon above M */
+    }
   }
   .unmute-all-btn{
     font-family: 'JetBrains Mono', monospace;
@@ -535,9 +542,6 @@
   .track-ctrl-btn.solo.active{
     background: var(--phosphor); border-color: var(--phosphor); color: #0E0E0D;
   }
-  @media (max-width: 720px){
-    .seq{ gap: 0.35rem 0.45rem; }
-  }
 
   .send-knobs{
     display: flex;
@@ -575,6 +579,20 @@
     background: var(--phosphor);
     cursor: pointer;
     border: none;
+  }
+  @media (max-width: 720px){
+    .seq{
+      grid-template-columns: 110px 1fr 40px;
+      gap: 0.35rem 0.4rem;
+      align-items: center;
+    }
+    .seq-label{ font-size: 0.58rem; }
+    .track-ctrl{ gap: 3px; }
+    .track-ctrl-btn{ width: 18px; height: 18px; font-size: 0.55rem; }
+    .send-knobs{ flex-direction: column; gap: 0.18rem; align-items: flex-start; }
+    .send-knob{ width: 28px; }
+    .send-knob-wrap{ gap: 0.18rem; font-size: 0.5rem; }
+    .inst-btn{ font-size: 0.5rem; padding: 0.12rem 0.22rem; }
   }
   .seq-label{
     font-family: 'JetBrains Mono', monospace;
@@ -617,15 +635,15 @@
      instead of squishing to fit the viewport */
   @media (max-width: 720px){
     .seq-row{
-      grid-template-columns: repeat(16, 30px);
-      grid-auto-columns: 30px;
-      gap: 0.3rem;
+      grid-template-columns: repeat(16, 24px);
+      grid-auto-columns: 24px;
+      gap: 0.22rem;
       width: max-content;
       margin-bottom: 0.1rem;
     }
     .step{
-      width: 30px;
-      height: 30px;
+      width: 24px;
+      height: 24px;
       aspect-ratio: auto;
       min-height: 0;
     }
