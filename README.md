@@ -6,15 +6,17 @@ Live: https://jerald-liu.github.io/modwav-web/
 
 ## What's in the repo
 
-A single static `index.html` — content, styles, and the interactive synth all in one file. No build step.
+Three static files, served as-is — `index.html` (markup + the inline circuit SVG), `styles.css`, and `app.js`. No build step, no framework, no runtime dependencies.
 
 The synth is a four-track step sequencer (kick / snare / hat / acid) with:
+- Multi-bar pages: 1 / 2 / 4 bars (÷2 / ×2), with live length changes deferred to the next bar boundary
 - Per-step pitch lock on the acid line (drag a step vertically to retune)
-- Per-track delay + reverb sends
+- An FM instrument option on the acid track (per-step ratio / index via a popup)
+- Per-track delay + reverb send knobs
 - Draggable / editable BPM control (60–180)
-- Global delay and reverb buses with feedback delay and a synthetic impulse response
+- Global delay and reverb return buses with feedback delay and a synthetic impulse response
 
-Drum voices are modeled on the 909 (oscillator + envelope, not samples). Acid is a sawtooth into a resonant lowpass with per-step accent + auto-slide on consecutive active steps.
+Drum voices are modeled on the 909 (oscillator + envelope, not samples). Acid is a sawtooth into a resonant lowpass with per-step accent and pitch.
 
 ## Local dev
 

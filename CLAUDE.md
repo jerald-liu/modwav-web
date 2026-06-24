@@ -1,8 +1,9 @@
 # Mod.wav
 
 A single-page site for **Mod.wav** — an SF community hardware/synth jam ("Patch & Play").
-It's both an event page and a playable artifact: a built-in 4-track / 16-step sequencer
-with a drum + acid voice, FX, and offline export to WAV stems / full mix / MIDI.
+It's both an event page and a playable artifact: a built-in 4-track / 16-step-per-bar
+sequencer (1/2/4-bar pages) with drum + acid/FM voices, FX, and offline export to
+WAV stems / full mix / MIDI.
 
 ---
 
