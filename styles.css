@@ -376,6 +376,8 @@
     width: 46%;
     z-index: 0;
     pointer-events: none;
+    /* clip the scaled-up diagram to the page so it can't add scroll */
+    overflow: hidden;
     opacity: 0.6;
     --trace: #6e2e2e;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%);
@@ -386,9 +388,14 @@
     width: 100%;
     height: 100%;
     filter: blur(0.3px);
+    /* desktop: scale the diagram up, anchored to the right edge, so its left
+       edge reaches the page center — overflow is clipped by .circuit-bg. */
+    transform: scale(1.7);
+    transform-origin: 100% 50%;
   }
   @media (max-width: 720px){
     .circuit-bg{ width: 92%; }
+    .circuit-svg{ transform: none; }
   }
   #bgScope{
     position: fixed;
