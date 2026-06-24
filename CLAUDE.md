@@ -68,7 +68,7 @@ Known intent (not yet built):
 - **Deploy:** GitHub Pages serves `main` branch root. Merging/pushing to `main` publishes live
   at https://jerald-liu.github.io/modwav-web/ (~30s rebuild).
 - **Audio:** voice functions take an explicit `AudioContext` first arg — `playKick(ctx, t, dest)`,
-  `playAcid(ctx, t, stepIndex, sliding, dest)`, etc. — so the same code renders live and in an
+  `playAcid(ctx, t, stepIndex, dest)`, etc. — so the same code renders live and in an
   `OfflineAudioContext` for export. Preserve this signature.
 - **Circuit background** is a hand-placed inline `<svg>` in `index.html` (coordinates are manual).
   Editing it means moving real numbers; there's no generator.

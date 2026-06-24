@@ -665,8 +665,6 @@ function playHat(ctx, t, dest){
   env.connect(dest);
 }
 
-let acidLastFreq = null;
-
 function midiToFreq(m){ return 440 * Math.pow(2, (m-69)/12); }
 
 function stepWobble(stepIndex, salt){
@@ -674,7 +672,7 @@ function stepWobble(stepIndex, salt){
   return x - Math.floor(x);
 }
 
-function playAcid(ctx, t, stepIndex, sliding, dest){
+function playAcid(ctx, t, stepIndex, dest){
   const note = ACID_NOTES[stepIndex % ACID_NOTES.length];
   const freq = midiToFreq(note);
   const accented = !!ACID_ACCENT[stepIndex % ACID_ACCENT.length];
@@ -692,12 +690,7 @@ function playAcid(ctx, t, stepIndex, sliding, dest){
 
   const osc = ctx.createOscillator();
   osc.type = 'sawtooth';
-  if(sliding && acidLastFreq){
-    osc.frequency.setValueAtTime(acidLastFreq, t);
-    osc.frequency.linearRampToValueAtTime(freq, t + STEP_SECONDS * 0.75);
-  } else {
-    osc.frequency.setValueAtTime(freq, t);
-  }
+  osc.frequency.setValueAtTime(freq, t);
 
   const filter = ctx.createBiquadFilter();
   filter.type = 'lowpass';
@@ -715,31 +708,23 @@ function playAcid(ctx, t, stepIndex, sliding, dest){
   gain.connect(dest);
   osc.start(t);
   osc.stop(t + STEP_SECONDS * 2.5);
-
-  acidLastFreq = freq;
 }
 
-function playFM(ctx, t, stepIndex, sliding, dest){
+function playFM(ctx, t, stepIndex, dest){
   const note = ACID_NOTES[stepIndex];
   const freq = midiToFreq(note);
   const ratio = FM_RATIO[stepIndex];
   const index = FM_INDEX[stepIndex];
   const accented = !!ACID_ACCENT[stepIndex];
   const noteLen = STEP_SECONDS * 1.4;
-  const startFreq = (sliding && acidLastFreq) ? acidLastFreq : freq;
 
   const carrier = ctx.createOscillator();
   carrier.type = 'sine';
-  carrier.frequency.setValueAtTime(startFreq, t);
+  carrier.frequency.setValueAtTime(freq, t);
 
   const mod = ctx.createOscillator();
   mod.type = 'sine';
-  mod.frequency.setValueAtTime(startFreq * ratio, t);
-
-  if(sliding && acidLastFreq){
-    carrier.frequency.linearRampToValueAtTime(freq, t + STEP_SECONDS * 0.7);
-    mod.frequency.linearRampToValueAtTime(freq * ratio, t + STEP_SECONDS * 0.7);
-  }
+  mod.frequency.setValueAtTime(freq * ratio, t);
 
   // mod depth scales with note frequency so timbre stays consistent across pitches
   const modGain = ctx.createGain();
@@ -758,8 +743,6 @@ function playFM(ctx, t, stepIndex, sliding, dest){
 
   carrier.start(t); carrier.stop(t + STEP_SECONDS * 2);
   mod.start(t); mod.stop(t + STEP_SECONDS * 2);
-
-  acidLastFreq = freq;
 }
 
 const VOICES = { kick: playKick, snare: playSnare, hat: playHat };
@@ -775,11 +758,8 @@ function scheduleStep(stepIndex, time){
     const dest = trackGains[track.id];
     if(track.id === 'acid'){
       if(pattern.acid[stepIndex]){
-        const prevIndex = (stepIndex - 1 + STEPS) % STEPS;
-        const isFM = acidInstrument === 'fm';
-        const sliding = !isFM && !!pattern.acid[prevIndex];
-        const voice = isFM ? playFM : playAcid;
-        voice(ctx, time, stepIndex, sliding, dest);
+        const voice = acidInstrument === 'fm' ? playFM : playAcid;
+        voice(ctx, time, stepIndex, dest);
       }
     } else if(pattern[track.id][stepIndex]){
       VOICES[track.id](ctx, time, dest);
@@ -809,7 +789,6 @@ function schedulerLoop(){
 function startSequencer(){
   currentStep = 0;
   nextStepTime = ctx.currentTime + 0.05;
-  acidLastFreq = null;
   schedulerLoop();
 }
 
@@ -1069,18 +1048,14 @@ async function renderLoop(trackIds){
   const octx = new OfflineAudioContext(2, length, EXPORT_SR);
   const gains = buildOfflineGraph(octx, trackIds);
 
-  acidLastFreq = null;
   for(let step=0; step<totalSteps; step++){
     const sIdx = step % STEPS;
     const t = startPad + step * STEP_SECONDS;
     trackIds.forEach(id=>{
       if(id === 'acid'){
         if(pattern.acid[sIdx]){
-          const prev = (sIdx - 1 + STEPS) % STEPS;
-          const isFM = acidInstrument === 'fm';
-          const sliding = !isFM && !!pattern.acid[prev];
-          const voice = isFM ? playFM : playAcid;
-          voice(octx, t, sIdx, sliding, gains.acid);
+          const voice = acidInstrument === 'fm' ? playFM : playAcid;
+          voice(octx, t, sIdx, gains.acid);
         }
       } else if(pattern[id][sIdx]){
         VOICES[id](octx, t, gains[id]);
