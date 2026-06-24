@@ -73,26 +73,40 @@ test('acid step: tap toggles, vertical drag retunes, horizontal drag does neithe
   expect(await hasOn(step)).toBe(onBeforeHoriz);
 });
 
-// 3 + 4 — right-click never toggles an acid step (1c08031), and the FM popup
-// is gated to FM mode and closes on switch back to ACID (bd1d728).
-test('FM popup: gated to FM mode, opens on right-click, closes on switch to ACID', async ({ page }) => {
+// 3 — right-click never toggles an acid step, in either instrument mode
+// (1c08031 guarded pointerdown; the pointerup guard finished the job).
+test('right-click never toggles an acid step (ACID + FM modes)', async ({ page }) => {
+  await open(page);
+  const acidStep = page.locator('.step.step-pitch[data-track="acid"][data-step="0"]');
+  const fmBtn = page.locator('.inst-btn').nth(1);
+
+  // ACID selected (default): right-click must not flip the step.
+  const onBefore = await hasOn(acidStep);
+  await acidStep.click({ button: 'right' });
+  expect(await hasOn(acidStep)).toBe(onBefore);
+
+  // FM selected: right-click opens the popup but still must not flip the step.
+  await fmBtn.click();
+  await acidStep.click({ button: 'right' });
+  expect(await hasOn(acidStep)).toBe(onBefore);
+});
+
+// 4 — FM popup is gated to FM mode and closes on switch back to ACID (bd1d728).
+test('FM popup: hidden in ACID mode, opens in FM mode, closes on switch back', async ({ page }) => {
   await open(page);
   const acidStep = page.locator('.step.step-pitch[data-track="acid"][data-step="0"]');
   const popup = page.locator('#fmPopup');
   const acidBtn = page.locator('.inst-btn').nth(0);
   const fmBtn = page.locator('.inst-btn').nth(1);
 
-  // ACID mode: right-click must NOT open the popup and must NOT toggle the step
-  const onBefore = await hasOn(acidStep);
+  // ACID mode: right-click does NOT open the popup.
   await acidStep.click({ button: 'right' });
   await expect(popup).toBeHidden();
-  expect(await hasOn(acidStep)).toBe(onBefore);
 
-  // FM mode: right-click opens the popup
+  // FM mode: right-click opens it.
   await fmBtn.click();
   await acidStep.click({ button: 'right' });
   await expect(popup).toBeVisible();
-  expect(await hasOn(acidStep)).toBe(onBefore); // still didn't toggle
 
   // switching back to ACID closes it. Dispatch directly: the open popup
   // overlaps the ACID button, and we're testing the handler, not the hit-test.
