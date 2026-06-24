@@ -154,7 +154,7 @@ const DEFAULT_PATTERN = {
 };
 
 const ACID_ACCENT = [1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,0,0];
-const ACID_NOTES = [36,36,39,41, 36,36,43,36, 39,41,36,36, 44,36,41,39];
+const ACID_NOTES = [36,36,39,41, 36,36,43,36, 39,39,36,36, 44,36,41,39];
 const ACID_NOTE_MIN = 24; // C1
 const ACID_NOTE_MAX = 60; // C4
 
