@@ -446,25 +446,28 @@
     position: absolute;
     top: 16rem;
     right: 0;
-    width: 50%;
-    height: auto;
+    bottom: 6.5rem;
+    width: 40%;
     z-index: 0;
     pointer-events: none;
-    --trace: #3a3a32;
+    filter: blur(0.3px);
+    opacity: 0.85;
+    --trace: #4a4a40;
   }
   @media (max-width: 720px){
-    .circuit-bg{ width: 100%; top: 18rem; }
+    .circuit-bg{ width: 92%; top: 18rem; bottom: 6.5rem; }
   }
   #bgScope{
     position: fixed;
-    top: 1vh;
+    top: 3vh;
     left: 0;
     right: 0;
     width: 100%;
-    height: 26vh;
+    height: 9vh;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.32;
+    opacity: 0.55;
+    filter: drop-shadow(0 0 6px var(--phosphor)) drop-shadow(0 0 14px rgba(143,255,196,0.35));
   }
   /* soft veil over the waveform so text reads cleanly on top */
   .bg-veil{
@@ -1017,342 +1020,342 @@
 </head>
 <body>
 
-<svg class="circuit-bg" aria-hidden="true" viewBox="0 0 500 2600" preserveAspectRatio="xMidYMin meet" xmlns="http://www.w3.org/2000/svg">
-  <g fill="none" stroke="#3a3a32" stroke-width="1.6" font-family="'JetBrains Mono', monospace">
+<svg class="circuit-bg" aria-hidden="true" viewBox="0 0 500 1450" preserveAspectRatio="xMidYMin meet" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="#4a4a40" stroke-width="2" font-family="'JetBrains Mono', monospace">
     <!-- power rail -->
-    <line x1="30" y1="40" x2="470" y2="40" stroke-dasharray="2 3"/>
-    <text x="474" y="44" fill="#3a3a32" font-size="9">+V</text>
+    <line x1="30" y1="22.0" x2="470" y2="22.0" stroke-dasharray="2 3"/>
+    <text x="474" y="24.2" fill="#4a4a40" font-size="9">+V</text>
 
     <!-- ===== CLOCK · LM555 ===== -->
-    <text x="40" y="68" fill="#3a3a32" font-size="11">CLOCK · LM555</text>
+    <text x="40" y="37.4" fill="#4a4a40" font-size="11">CLOCK · LM555</text>
     <!-- RT pot -->
-    <line x1="60" y1="40" x2="60" y2="80"/>
-    <rect x="50" y="80" width="20" height="48"/>
-    <line x1="50" y1="100" x2="70" y2="108"/>
-    <text x="36" y="108" fill="#3a3a32" font-size="8" text-anchor="end">RT 100k</text>
-    <line x1="70" y1="108" x2="160" y2="108"/>
+    <line x1="60" y1="22.0" x2="60" y2="44.0"/>
+    <rect x="50" y="44.0" width="20" height="48"/>
+    <line x1="50" y1="55.0" x2="70" y2="59.4"/>
+    <text x="36" y="59.4" fill="#4a4a40" font-size="8" text-anchor="end">RT 100k</text>
+    <line x1="70" y1="59.4" x2="160" y2="59.4"/>
     <!-- 555 IC -->
-    <rect x="160" y="80" width="200" height="160"/>
-    <text x="260" y="170" fill="#3a3a32" text-anchor="middle" font-size="11">U1 · 555</text>
-    <text x="162" y="100" fill="#3a3a32" font-size="8">1 GND</text>
-    <text x="162" y="120" fill="#3a3a32" font-size="8">2 TRG</text>
-    <text x="162" y="140" fill="#3a3a32" font-size="8">6 THR</text>
-    <text x="162" y="160" fill="#3a3a32" font-size="8">5 CV</text>
-    <text x="358" y="100" fill="#3a3a32" font-size="8" text-anchor="end">8 V+</text>
-    <text x="358" y="120" fill="#3a3a32" font-size="8" text-anchor="end">3 OUT</text>
-    <text x="358" y="140" fill="#3a3a32" font-size="8" text-anchor="end">7 DIS</text>
-    <text x="358" y="160" fill="#3a3a32" font-size="8" text-anchor="end">4 RST</text>
-    <line x1="260" y1="40" x2="260" y2="80"/>
-    <line x1="360" y1="156" x2="390" y2="156"/>
-    <line x1="390" y1="156" x2="390" y2="40"/>
+    <rect x="160" y="44.0" width="200" height="160"/>
+    <text x="260" y="93.5" fill="#4a4a40" text-anchor="middle" font-size="11">U1 · 555</text>
+    <text x="162" y="55.0" fill="#4a4a40" font-size="8">1 GND</text>
+    <text x="162" y="66.0" fill="#4a4a40" font-size="8">2 TRG</text>
+    <text x="162" y="77.0" fill="#4a4a40" font-size="8">6 THR</text>
+    <text x="162" y="88.0" fill="#4a4a40" font-size="8">5 CV</text>
+    <text x="358" y="55.0" fill="#4a4a40" font-size="8" text-anchor="end">8 V+</text>
+    <text x="358" y="66.0" fill="#4a4a40" font-size="8" text-anchor="end">3 OUT</text>
+    <text x="358" y="77.0" fill="#4a4a40" font-size="8" text-anchor="end">7 DIS</text>
+    <text x="358" y="88.0" fill="#4a4a40" font-size="8" text-anchor="end">4 RST</text>
+    <line x1="260" y1="22.0" x2="260" y2="44.0"/>
+    <line x1="360" y1="85.8" x2="390" y2="85.8"/>
+    <line x1="390" y1="85.8" x2="390" y2="22.0"/>
     <!-- CT cap -->
-    <line x1="160" y1="118" x2="130" y2="118"/>
-    <line x1="160" y1="138" x2="130" y2="138"/>
-    <line x1="130" y1="118" x2="130" y2="138"/>
-    <line x1="130" y1="128" x2="130" y2="180"/>
-    <line x1="118" y1="180" x2="142" y2="180"/>
-    <line x1="122" y1="186" x2="138" y2="186"/>
-    <text x="146" y="186" fill="#3a3a32" font-size="8">CT 1uF</text>
-    <line x1="130" y1="186" x2="130" y2="208"/>
-    <path d="M120 208 L140 208 M122 213 L138 213 M125 218 L135 218"/>
+    <line x1="160" y1="64.9" x2="130" y2="64.9"/>
+    <line x1="160" y1="75.9" x2="130" y2="75.9"/>
+    <line x1="130" y1="64.9" x2="130" y2="75.9"/>
+    <line x1="130" y1="70.4" x2="130" y2="99.0"/>
+    <line x1="118" y1="99.0" x2="142" y2="99.0"/>
+    <line x1="122" y1="102.3" x2="138" y2="102.3"/>
+    <text x="146" y="102.3" fill="#4a4a40" font-size="8">CT 1uF</text>
+    <line x1="130" y1="102.3" x2="130" y2="114.4"/>
+    <path d="M120 114.4 L140 114.4 M122 117.15 L138 117.15 M125 119.9 L135 119.9"/>
     <!-- CV decoupling -->
-    <line x1="160" y1="158" x2="115" y2="158"/>
-    <line x1="115" y1="158" x2="115" y2="200"/>
-    <line x1="107" y1="200" x2="123" y2="200"/>
-    <line x1="110" y1="206" x2="120" y2="206"/>
-    <text x="100" y="200" fill="#3a3a32" font-size="8" text-anchor="end">10n</text>
-    <line x1="115" y1="206" x2="115" y2="226"/>
-    <path d="M107 226 L123 226 M109 231 L121 231 M112 236 L118 236"/>
+    <line x1="160" y1="86.9" x2="115" y2="86.9"/>
+    <line x1="115" y1="86.9" x2="115" y2="110.0"/>
+    <line x1="107" y1="110.0" x2="123" y2="110.0"/>
+    <line x1="110" y1="113.3" x2="120" y2="113.3"/>
+    <text x="100" y="110.0" fill="#4a4a40" font-size="8" text-anchor="end">10n</text>
+    <line x1="115" y1="113.3" x2="115" y2="124.3"/>
+    <path d="M107 124.3 L123 124.3 M109 127.05 L121 127.05 M112 129.8 L118 129.8"/>
     <!-- DIS → between RT and CT -->
-    <line x1="360" y1="138" x2="410" y2="138"/>
-    <line x1="410" y1="138" x2="410" y2="108"/>
-    <line x1="410" y1="108" x2="70" y2="108"/>
+    <line x1="360" y1="75.9" x2="410" y2="75.9"/>
+    <line x1="410" y1="75.9" x2="410" y2="59.4"/>
+    <line x1="410" y1="59.4" x2="70" y2="59.4"/>
     <!-- CLK out down to counter -->
-    <line x1="360" y1="118" x2="430" y2="118"/>
-    <text x="380" y="112" fill="#3a3a32" font-size="10">CLK</text>
-    <line x1="430" y1="118" x2="430" y2="320"/>
-    <line x1="430" y1="320" x2="280" y2="320"/>
-    <line x1="280" y1="320" x2="280" y2="350"/>
+    <line x1="360" y1="64.9" x2="430" y2="64.9"/>
+    <text x="380" y="61.6" fill="#4a4a40" font-size="10">CLK</text>
+    <line x1="430" y1="64.9" x2="430" y2="176.0"/>
+    <line x1="430" y1="176.0" x2="280" y2="176.0"/>
+    <line x1="280" y1="176.0" x2="280" y2="192.5"/>
 
     <!-- ===== COUNTER · CD4040 ===== -->
-    <text x="40" y="304" fill="#3a3a32" font-size="11">÷N COUNTER · CD4040</text>
-    <rect x="40" y="320" width="280" height="100"/>
-    <text x="180" y="402" fill="#3a3a32" text-anchor="middle" font-size="11">U2</text>
-    <text x="42" y="338" fill="#3a3a32" font-size="8">10 CLK</text>
-    <text x="42" y="358" fill="#3a3a32" font-size="8">11 RST</text>
-    <text x="318" y="338" fill="#3a3a32" font-size="8" text-anchor="end">9  Q0</text>
-    <text x="318" y="358" fill="#3a3a32" font-size="8" text-anchor="end">7  Q1</text>
-    <text x="318" y="378" fill="#3a3a32" font-size="8" text-anchor="end">6  Q2</text>
-    <text x="318" y="398" fill="#3a3a32" font-size="8" text-anchor="end">5  Q3</text>
-    <line x1="40" y1="354" x2="20" y2="354"/>
-    <line x1="20" y1="354" x2="20" y2="410"/>
-    <path d="M12 410 L28 410 M14 415 L26 415 M17 420 L23 420"/>
-    <line x1="320" y1="338" x2="350" y2="338"/>
-    <line x1="320" y1="358" x2="350" y2="358"/>
-    <line x1="320" y1="378" x2="350" y2="378"/>
-    <line x1="320" y1="398" x2="350" y2="398"/>
-    <line x1="350" y1="338" x2="350" y2="470"/>
-    <line x1="350" y1="358" x2="350" y2="470"/>
-    <line x1="350" y1="378" x2="350" y2="470"/>
-    <line x1="350" y1="398" x2="350" y2="470"/>
+    <text x="40" y="167.2" fill="#4a4a40" font-size="11">÷N COUNTER · CD4040</text>
+    <rect x="40" y="176.0" width="280" height="100"/>
+    <text x="180" y="221.1" fill="#4a4a40" text-anchor="middle" font-size="11">U2</text>
+    <text x="42" y="185.9" fill="#4a4a40" font-size="8">10 CLK</text>
+    <text x="42" y="196.9" fill="#4a4a40" font-size="8">11 RST</text>
+    <text x="318" y="185.9" fill="#4a4a40" font-size="8" text-anchor="end">9  Q0</text>
+    <text x="318" y="196.9" fill="#4a4a40" font-size="8" text-anchor="end">7  Q1</text>
+    <text x="318" y="207.9" fill="#4a4a40" font-size="8" text-anchor="end">6  Q2</text>
+    <text x="318" y="218.9" fill="#4a4a40" font-size="8" text-anchor="end">5  Q3</text>
+    <line x1="40" y1="194.7" x2="20" y2="194.7"/>
+    <line x1="20" y1="194.7" x2="20" y2="225.5"/>
+    <path d="M12 225.5 L28 225.5 M14 228.25 L26 228.25 M17 231.0 L23 231.0"/>
+    <line x1="320" y1="185.9" x2="350" y2="185.9"/>
+    <line x1="320" y1="196.9" x2="350" y2="196.9"/>
+    <line x1="320" y1="207.9" x2="350" y2="207.9"/>
+    <line x1="320" y1="218.9" x2="350" y2="218.9"/>
+    <line x1="350" y1="185.9" x2="350" y2="258.5"/>
+    <line x1="350" y1="196.9" x2="350" y2="258.5"/>
+    <line x1="350" y1="207.9" x2="350" y2="258.5"/>
+    <line x1="350" y1="218.9" x2="350" y2="258.5"/>
 
     <!-- ===== 1-OF-16 DECODER · CD4514 ===== -->
-    <text x="40" y="454" fill="#3a3a32" font-size="11">1-OF-16 DECODE · CD4514</text>
-    <rect x="40" y="470" width="380" height="380"/>
-    <text x="230" y="844" fill="#3a3a32" text-anchor="middle" font-size="11">U3</text>
-    <text x="42" y="488" fill="#3a3a32" font-size="8">2  A0</text>
-    <text x="42" y="506" fill="#3a3a32" font-size="8">3  A1</text>
-    <text x="42" y="524" fill="#3a3a32" font-size="8">21 A2</text>
-    <text x="42" y="542" fill="#3a3a32" font-size="8">22 A3</text>
-    <text x="42" y="562" fill="#3a3a32" font-size="8">1  STR</text>
-    <text x="42" y="580" fill="#3a3a32" font-size="8">23 INH</text>
-    <g font-size="8" fill="#3a3a32">
-      <text x="418" y="488" text-anchor="end">S0</text>
-      <text x="418" y="506" text-anchor="end">S1</text>
-      <text x="418" y="524" text-anchor="end">S2</text>
-      <text x="418" y="542" text-anchor="end">S3</text>
-      <text x="418" y="560" text-anchor="end">S4</text>
-      <text x="418" y="578" text-anchor="end">S5</text>
-      <text x="418" y="596" text-anchor="end">S6</text>
-      <text x="418" y="614" text-anchor="end">S7</text>
-      <text x="418" y="632" text-anchor="end">S8</text>
-      <text x="418" y="650" text-anchor="end">S9</text>
-      <text x="418" y="668" text-anchor="end">S10</text>
-      <text x="418" y="686" text-anchor="end">S11</text>
-      <text x="418" y="704" text-anchor="end">S12</text>
-      <text x="418" y="722" text-anchor="end">S13</text>
-      <text x="418" y="740" text-anchor="end">S14</text>
-      <text x="418" y="758" text-anchor="end">S15</text>
+    <text x="40" y="249.7" fill="#4a4a40" font-size="11">1-OF-16 DECODE · CD4514</text>
+    <rect x="40" y="258.5" width="380" height="380"/>
+    <text x="230" y="464.2" fill="#4a4a40" text-anchor="middle" font-size="11">U3</text>
+    <text x="42" y="268.4" fill="#4a4a40" font-size="8">2  A0</text>
+    <text x="42" y="278.3" fill="#4a4a40" font-size="8">3  A1</text>
+    <text x="42" y="288.2" fill="#4a4a40" font-size="8">21 A2</text>
+    <text x="42" y="298.1" fill="#4a4a40" font-size="8">22 A3</text>
+    <text x="42" y="309.1" fill="#4a4a40" font-size="8">1  STR</text>
+    <text x="42" y="319.0" fill="#4a4a40" font-size="8">23 INH</text>
+    <g font-size="8" fill="#4a4a40">
+      <text x="418" y="268.4" text-anchor="end">S0</text>
+      <text x="418" y="278.3" text-anchor="end">S1</text>
+      <text x="418" y="288.2" text-anchor="end">S2</text>
+      <text x="418" y="298.1" text-anchor="end">S3</text>
+      <text x="418" y="308.0" text-anchor="end">S4</text>
+      <text x="418" y="317.9" text-anchor="end">S5</text>
+      <text x="418" y="327.8" text-anchor="end">S6</text>
+      <text x="418" y="337.7" text-anchor="end">S7</text>
+      <text x="418" y="347.6" text-anchor="end">S8</text>
+      <text x="418" y="357.5" text-anchor="end">S9</text>
+      <text x="418" y="367.4" text-anchor="end">S10</text>
+      <text x="418" y="377.3" text-anchor="end">S11</text>
+      <text x="418" y="387.2" text-anchor="end">S12</text>
+      <text x="418" y="397.1" text-anchor="end">S13</text>
+      <text x="418" y="407.0" text-anchor="end">S14</text>
+      <text x="418" y="416.9" text-anchor="end">S15</text>
     </g>
     <!-- Q0-Q3 in from counter -->
-    <line x1="350" y1="470" x2="350" y2="488"/>
-    <line x1="40" y1="488" x2="350" y2="488"/>
-    <line x1="40" y1="506" x2="350" y2="506"/>
-    <line x1="40" y1="524" x2="350" y2="524"/>
-    <line x1="40" y1="542" x2="350" y2="542"/>
+    <line x1="350" y1="258.5" x2="350" y2="268.4"/>
+    <line x1="40" y1="268.4" x2="350" y2="268.4"/>
+    <line x1="40" y1="278.3" x2="350" y2="278.3"/>
+    <line x1="40" y1="288.2" x2="350" y2="288.2"/>
+    <line x1="40" y1="298.1" x2="350" y2="298.1"/>
     <!-- STR/INH grounded -->
-    <line x1="40" y1="558" x2="25" y2="558"/>
-    <line x1="25" y1="558" x2="25" y2="612"/>
-    <line x1="40" y1="576" x2="25" y2="576"/>
-    <path d="M17 612 L33 612 M19 617 L31 617 M22 622 L28 622"/>
+    <line x1="40" y1="306.9" x2="25" y2="306.9"/>
+    <line x1="25" y1="306.9" x2="25" y2="336.6"/>
+    <line x1="40" y1="316.8" x2="25" y2="316.8"/>
+    <path d="M17 336.6 L33 336.6 M19 339.35 L31 339.35 M22 342.1 L28 342.1"/>
     <!-- S0..S15 outputs going right then down to matrix -->
     <g>
-      <line x1="420" y1="488" x2="450" y2="488"/>
-      <line x1="420" y1="506" x2="450" y2="506"/>
-      <line x1="420" y1="524" x2="450" y2="524"/>
-      <line x1="420" y1="542" x2="450" y2="542"/>
-      <line x1="420" y1="560" x2="450" y2="560"/>
-      <line x1="420" y1="578" x2="450" y2="578"/>
-      <line x1="420" y1="596" x2="450" y2="596"/>
-      <line x1="420" y1="614" x2="450" y2="614"/>
-      <line x1="420" y1="632" x2="450" y2="632"/>
-      <line x1="420" y1="650" x2="450" y2="650"/>
-      <line x1="420" y1="668" x2="450" y2="668"/>
-      <line x1="420" y1="686" x2="450" y2="686"/>
-      <line x1="420" y1="704" x2="450" y2="704"/>
-      <line x1="420" y1="722" x2="450" y2="722"/>
-      <line x1="420" y1="740" x2="450" y2="740"/>
-      <line x1="420" y1="758" x2="450" y2="758"/>
+      <line x1="420" y1="268.4" x2="450" y2="268.4"/>
+      <line x1="420" y1="278.3" x2="450" y2="278.3"/>
+      <line x1="420" y1="288.2" x2="450" y2="288.2"/>
+      <line x1="420" y1="298.1" x2="450" y2="298.1"/>
+      <line x1="420" y1="308.0" x2="450" y2="308.0"/>
+      <line x1="420" y1="317.9" x2="450" y2="317.9"/>
+      <line x1="420" y1="327.8" x2="450" y2="327.8"/>
+      <line x1="420" y1="337.7" x2="450" y2="337.7"/>
+      <line x1="420" y1="347.6" x2="450" y2="347.6"/>
+      <line x1="420" y1="357.5" x2="450" y2="357.5"/>
+      <line x1="420" y1="367.4" x2="450" y2="367.4"/>
+      <line x1="420" y1="377.3" x2="450" y2="377.3"/>
+      <line x1="420" y1="387.2" x2="450" y2="387.2"/>
+      <line x1="420" y1="397.1" x2="450" y2="397.1"/>
+      <line x1="420" y1="407.0" x2="450" y2="407.0"/>
+      <line x1="420" y1="416.9" x2="450" y2="416.9"/>
     </g>
     <!-- bundle -->
-    <line x1="450" y1="488" x2="450" y2="900"/>
-    <line x1="450" y1="506" x2="450" y2="900"/>
-    <line x1="450" y1="524" x2="450" y2="900"/>
-    <line x1="450" y1="542" x2="450" y2="900"/>
-    <line x1="450" y1="560" x2="450" y2="900"/>
-    <line x1="450" y1="578" x2="450" y2="900"/>
-    <line x1="450" y1="596" x2="450" y2="900"/>
-    <line x1="450" y1="614" x2="450" y2="900"/>
-    <line x1="450" y1="632" x2="450" y2="900"/>
-    <line x1="450" y1="650" x2="450" y2="900"/>
-    <line x1="450" y1="668" x2="450" y2="900"/>
-    <line x1="450" y1="686" x2="450" y2="900"/>
-    <line x1="450" y1="704" x2="450" y2="900"/>
-    <line x1="450" y1="722" x2="450" y2="900"/>
-    <line x1="450" y1="740" x2="450" y2="900"/>
-    <line x1="450" y1="758" x2="450" y2="900"/>
-    <text x="456" y="630" fill="#3a3a32" font-size="8">S0..S15</text>
+    <line x1="450" y1="268.4" x2="450" y2="495.0"/>
+    <line x1="450" y1="278.3" x2="450" y2="495.0"/>
+    <line x1="450" y1="288.2" x2="450" y2="495.0"/>
+    <line x1="450" y1="298.1" x2="450" y2="495.0"/>
+    <line x1="450" y1="308.0" x2="450" y2="495.0"/>
+    <line x1="450" y1="317.9" x2="450" y2="495.0"/>
+    <line x1="450" y1="327.8" x2="450" y2="495.0"/>
+    <line x1="450" y1="337.7" x2="450" y2="495.0"/>
+    <line x1="450" y1="347.6" x2="450" y2="495.0"/>
+    <line x1="450" y1="357.5" x2="450" y2="495.0"/>
+    <line x1="450" y1="367.4" x2="450" y2="495.0"/>
+    <line x1="450" y1="377.3" x2="450" y2="495.0"/>
+    <line x1="450" y1="387.2" x2="450" y2="495.0"/>
+    <line x1="450" y1="397.1" x2="450" y2="495.0"/>
+    <line x1="450" y1="407.0" x2="450" y2="495.0"/>
+    <line x1="450" y1="416.9" x2="450" y2="495.0"/>
+    <text x="456" y="346.5" fill="#4a4a40" font-size="8">S0..S15</text>
 
     <!-- ===== STEP MATRIX 16 × 4 ===== -->
-    <text x="40" y="894" fill="#3a3a32" font-size="11">STEP MATRIX</text>
-    <text x="40" y="908" fill="#3a3a32" font-size="8">4× CD4066 + 1N4148 diode-OR</text>
-    <rect x="40" y="916" width="420" height="540"/>
-    <text x="250" y="1450" fill="#3a3a32" text-anchor="middle" font-size="11">U4–U7</text>
+    <text x="40" y="491.7" fill="#4a4a40" font-size="11">STEP MATRIX</text>
+    <text x="40" y="499.4" fill="#4a4a40" font-size="8">4× CD4066 + 1N4148 diode-OR</text>
+    <rect x="40" y="503.8" width="420" height="540"/>
+    <text x="250" y="797.5" fill="#4a4a40" text-anchor="middle" font-size="11">U4–U7</text>
     <!-- bus drop from decoder -->
-    <line x1="450" y1="900" x2="450" y2="930"/>
-    <line x1="450" y1="930" x2="60" y2="930"/>
+    <line x1="450" y1="495.0" x2="450" y2="511.5"/>
+    <line x1="450" y1="511.5" x2="60" y2="511.5"/>
     <!-- 16 step rows in matrix -->
     <g stroke-width="1">
-      <line x1="60" y1="946" x2="440" y2="946"/>
-      <line x1="60" y1="976" x2="440" y2="976"/>
-      <line x1="60" y1="1006" x2="440" y2="1006"/>
-      <line x1="60" y1="1036" x2="440" y2="1036"/>
-      <line x1="60" y1="1066" x2="440" y2="1066"/>
-      <line x1="60" y1="1096" x2="440" y2="1096"/>
-      <line x1="60" y1="1126" x2="440" y2="1126"/>
-      <line x1="60" y1="1156" x2="440" y2="1156"/>
-      <line x1="60" y1="1186" x2="440" y2="1186"/>
-      <line x1="60" y1="1216" x2="440" y2="1216"/>
-      <line x1="60" y1="1246" x2="440" y2="1246"/>
-      <line x1="60" y1="1276" x2="440" y2="1276"/>
-      <line x1="60" y1="1306" x2="440" y2="1306"/>
-      <line x1="60" y1="1336" x2="440" y2="1336"/>
-      <line x1="60" y1="1366" x2="440" y2="1366"/>
-      <line x1="60" y1="1396" x2="440" y2="1396"/>
+      <line x1="60" y1="520.3" x2="440" y2="520.3"/>
+      <line x1="60" y1="536.8" x2="440" y2="536.8"/>
+      <line x1="60" y1="553.3" x2="440" y2="553.3"/>
+      <line x1="60" y1="569.8" x2="440" y2="569.8"/>
+      <line x1="60" y1="586.3" x2="440" y2="586.3"/>
+      <line x1="60" y1="602.8" x2="440" y2="602.8"/>
+      <line x1="60" y1="619.3" x2="440" y2="619.3"/>
+      <line x1="60" y1="635.8" x2="440" y2="635.8"/>
+      <line x1="60" y1="652.3" x2="440" y2="652.3"/>
+      <line x1="60" y1="668.8" x2="440" y2="668.8"/>
+      <line x1="60" y1="685.3" x2="440" y2="685.3"/>
+      <line x1="60" y1="701.8" x2="440" y2="701.8"/>
+      <line x1="60" y1="718.3" x2="440" y2="718.3"/>
+      <line x1="60" y1="734.8" x2="440" y2="734.8"/>
+      <line x1="60" y1="751.3" x2="440" y2="751.3"/>
+      <line x1="60" y1="767.8" x2="440" y2="767.8"/>
     </g>
     <!-- 4 track columns -->
     <g stroke-width="1">
-      <line x1="140" y1="940" x2="140" y2="1416"/>
-      <line x1="220" y1="940" x2="220" y2="1416"/>
-      <line x1="300" y1="940" x2="300" y2="1416"/>
-      <line x1="380" y1="940" x2="380" y2="1416"/>
+      <line x1="140" y1="517.0" x2="140" y2="778.8"/>
+      <line x1="220" y1="517.0" x2="220" y2="778.8"/>
+      <line x1="300" y1="517.0" x2="300" y2="778.8"/>
+      <line x1="380" y1="517.0" x2="380" y2="778.8"/>
     </g>
     <!-- track labels at bottom -->
-    <g font-size="9" fill="#3a3a32">
-      <text x="140" y="1432" text-anchor="middle">K</text>
-      <text x="220" y="1432" text-anchor="middle">S</text>
-      <text x="300" y="1432" text-anchor="middle">H</text>
-      <text x="380" y="1432" text-anchor="middle">A</text>
+    <g font-size="9" fill="#4a4a40">
+      <text x="140" y="787.6" text-anchor="middle">K</text>
+      <text x="220" y="787.6" text-anchor="middle">S</text>
+      <text x="300" y="787.6" text-anchor="middle">H</text>
+      <text x="380" y="787.6" text-anchor="middle">A</text>
     </g>
     <!-- diode triangles for default pattern -->
-    <g fill="#3a3a32" stroke="#3a3a32" stroke-width="0.6">
+    <g fill="#4a4a40" stroke="#4a4a40" stroke-width="0.6">
       <!-- KICK: rows 0,4,8,12 -->
-      <polygon points="134,940 146,940 140,952"/>
-      <polygon points="134,1060 146,1060 140,1072"/>
-      <polygon points="134,1180 146,1180 140,1192"/>
-      <polygon points="134,1300 146,1300 140,1312"/>
+      <polygon points="134,517.0 146,517.0 140,523.6"/>
+      <polygon points="134,583.0 146,583.0 140,589.6"/>
+      <polygon points="134,649.0 146,649.0 140,655.6"/>
+      <polygon points="134,715.0 146,715.0 140,721.6"/>
       <!-- SNARE: rows 4, 15 -->
-      <polygon points="214,1060 226,1060 220,1072"/>
-      <polygon points="214,1390 226,1390 220,1402"/>
+      <polygon points="214,583.0 226,583.0 220,589.6"/>
+      <polygon points="214,764.5 226,764.5 220,771.1"/>
       <!-- HAT: even rows -->
-      <polygon points="294,940 306,940 300,952"/>
-      <polygon points="294,1000 306,1000 300,1012"/>
-      <polygon points="294,1060 306,1060 300,1072"/>
-      <polygon points="294,1120 306,1120 300,1132"/>
-      <polygon points="294,1180 306,1180 300,1192"/>
-      <polygon points="294,1240 306,1240 300,1252"/>
-      <polygon points="294,1300 306,1300 300,1312"/>
-      <polygon points="294,1360 306,1360 300,1372"/>
+      <polygon points="294,517.0 306,517.0 300,523.6"/>
+      <polygon points="294,550.0 306,550.0 300,556.6"/>
+      <polygon points="294,583.0 306,583.0 300,589.6"/>
+      <polygon points="294,616.0 306,616.0 300,622.6"/>
+      <polygon points="294,649.0 306,649.0 300,655.6"/>
+      <polygon points="294,682.0 306,682.0 300,688.6"/>
+      <polygon points="294,715.0 306,715.0 300,721.6"/>
+      <polygon points="294,748.0 306,748.0 300,754.6"/>
       <!-- ACID: scattered -->
-      <polygon points="374,940 386,940 380,952"/>
-      <polygon points="374,970 386,970 380,982"/>
-      <polygon points="374,1030 386,1030 380,1042"/>
-      <polygon points="374,1150 386,1150 380,1162"/>
-      <polygon points="374,1180 386,1180 380,1192"/>
-      <polygon points="374,1210 386,1210 380,1222"/>
-      <polygon points="374,1300 386,1300 380,1312"/>
+      <polygon points="374,517.0 386,517.0 380,523.6"/>
+      <polygon points="374,533.5 386,533.5 380,540.1"/>
+      <polygon points="374,566.5 386,566.5 380,573.1"/>
+      <polygon points="374,632.5 386,632.5 380,639.1"/>
+      <polygon points="374,649.0 386,649.0 380,655.6"/>
+      <polygon points="374,665.5 386,665.5 380,672.1"/>
+      <polygon points="374,715.0 386,715.0 380,721.6"/>
     </g>
     <!-- 4 track triggers exit out the bottom of the matrix -->
-    <line x1="140" y1="1416" x2="140" y2="1500"/>
-    <line x1="220" y1="1416" x2="220" y2="1540"/>
-    <line x1="300" y1="1416" x2="300" y2="1580"/>
-    <line x1="380" y1="1416" x2="380" y2="1620"/>
+    <line x1="140" y1="778.8" x2="140" y2="825.0"/>
+    <line x1="220" y1="778.8" x2="220" y2="847.0"/>
+    <line x1="300" y1="778.8" x2="300" y2="869.0"/>
+    <line x1="380" y1="778.8" x2="380" y2="891.0"/>
 
     <!-- ===== VOICES ===== -->
-    <text x="40" y="1494" fill="#3a3a32" font-size="11">VOICES</text>
-    <rect x="40" y="1506" width="380" height="50"/>
-    <text x="50" y="1526" fill="#3a3a32" font-size="10">KICK · 4093 osc + RC env</text>
-    <text x="50" y="1544" fill="#3a3a32" font-size="8">55→33 Hz sweep · VCA Q1 2N3904 · env 47k/1u</text>
-    <line x1="140" y1="1500" x2="140" y2="1506"/>
+    <text x="40" y="821.7" fill="#4a4a40" font-size="11">VOICES</text>
+    <rect x="40" y="828.3" width="380" height="50"/>
+    <text x="50" y="839.3" fill="#4a4a40" font-size="10">KICK · 4093 osc + RC env</text>
+    <text x="50" y="849.2" fill="#4a4a40" font-size="8">55→33 Hz sweep · VCA Q1 2N3904 · env 47k/1u</text>
+    <line x1="140" y1="825.0" x2="140" y2="828.3"/>
 
-    <rect x="40" y="1572" width="380" height="50"/>
-    <text x="50" y="1592" fill="#3a3a32" font-size="10">SNARE · noise + BPF + env</text>
-    <text x="50" y="1610" fill="#3a3a32" font-size="8">Q2 reverse-bias BE noise · MFB BPF 1.8 kHz · VCA</text>
-    <line x1="220" y1="1540" x2="220" y2="1572"/>
+    <rect x="40" y="864.6" width="380" height="50"/>
+    <text x="50" y="875.6" fill="#4a4a40" font-size="10">SNARE · noise + BPF + env</text>
+    <text x="50" y="885.5" fill="#4a4a40" font-size="8">Q2 reverse-bias BE noise · MFB BPF 1.8 kHz · VCA</text>
+    <line x1="220" y1="847.0" x2="220" y2="864.6"/>
 
-    <rect x="40" y="1638" width="380" height="50"/>
-    <text x="50" y="1658" fill="#3a3a32" font-size="10">HAT · 6× sq mix + HPF</text>
-    <text x="50" y="1676" fill="#3a3a32" font-size="8">CD40106 inverter ring → XOR mix → HPF 6 kHz</text>
-    <line x1="300" y1="1580" x2="300" y2="1638"/>
+    <rect x="40" y="900.9" width="380" height="50"/>
+    <text x="50" y="911.9" fill="#4a4a40" font-size="10">HAT · 6× sq mix + HPF</text>
+    <text x="50" y="921.8" fill="#4a4a40" font-size="8">CD40106 inverter ring → XOR mix → HPF 6 kHz</text>
+    <line x1="300" y1="869.0" x2="300" y2="900.9"/>
 
-    <text x="40" y="1716" fill="#3a3a32" font-size="11">ACID · VCO → VCF → VCA</text>
-    <rect x="40" y="1728" width="110" height="60"/>
-    <text x="95" y="1754" text-anchor="middle" fill="#3a3a32" font-size="10">VCO</text>
-    <text x="95" y="1772" text-anchor="middle" fill="#3a3a32" font-size="8">CEM3340</text>
-    <rect x="170" y="1728" width="110" height="60"/>
-    <text x="225" y="1754" text-anchor="middle" fill="#3a3a32" font-size="10">VCF</text>
-    <text x="225" y="1772" text-anchor="middle" fill="#3a3a32" font-size="8">SSM2040</text>
-    <rect x="300" y="1728" width="110" height="60"/>
-    <text x="355" y="1754" text-anchor="middle" fill="#3a3a32" font-size="10">VCA</text>
-    <text x="355" y="1772" text-anchor="middle" fill="#3a3a32" font-size="8">LM13700</text>
-    <line x1="150" y1="1758" x2="170" y2="1758"/>
-    <line x1="280" y1="1758" x2="300" y2="1758"/>
-    <line x1="380" y1="1620" x2="380" y2="1728"/>
-    <text x="386" y="1700" fill="#3a3a32" font-size="8">gate/acc</text>
-    <rect x="40" y="1808" width="160" height="36"/>
-    <text x="120" y="1830" fill="#3a3a32" text-anchor="middle" font-size="10">ENV / SLIDE</text>
-    <line x1="200" y1="1826" x2="225" y2="1826"/>
-    <line x1="225" y1="1826" x2="225" y2="1788"/>
-    <text x="232" y="1810" fill="#3a3a32" font-size="8">cutoff CV</text>
+    <text x="40" y="943.8" fill="#4a4a40" font-size="11">ACID · VCO → VCF → VCA</text>
+    <rect x="40" y="950.4" width="110" height="60"/>
+    <text x="95" y="964.7" text-anchor="middle" fill="#4a4a40" font-size="10">VCO</text>
+    <text x="95" y="974.6" text-anchor="middle" fill="#4a4a40" font-size="8">CEM3340</text>
+    <rect x="170" y="950.4" width="110" height="60"/>
+    <text x="225" y="964.7" text-anchor="middle" fill="#4a4a40" font-size="10">VCF</text>
+    <text x="225" y="974.6" text-anchor="middle" fill="#4a4a40" font-size="8">SSM2040</text>
+    <rect x="300" y="950.4" width="110" height="60"/>
+    <text x="355" y="964.7" text-anchor="middle" fill="#4a4a40" font-size="10">VCA</text>
+    <text x="355" y="974.6" text-anchor="middle" fill="#4a4a40" font-size="8">LM13700</text>
+    <line x1="150" y1="966.9" x2="170" y2="966.9"/>
+    <line x1="280" y1="966.9" x2="300" y2="966.9"/>
+    <line x1="380" y1="891.0" x2="380" y2="950.4"/>
+    <text x="386" y="935.0" fill="#4a4a40" font-size="8">gate/acc</text>
+    <rect x="40" y="994.4" width="160" height="36"/>
+    <text x="120" y="1006.5" fill="#4a4a40" text-anchor="middle" font-size="10">ENV / SLIDE</text>
+    <line x1="200" y1="1004.3" x2="225" y2="1004.3"/>
+    <line x1="225" y1="1004.3" x2="225" y2="983.4"/>
+    <text x="232" y="995.5" fill="#4a4a40" font-size="8">cutoff CV</text>
 
     <!-- ===== FX: DELAY + REVERB stacked ===== -->
-    <text x="40" y="1894" fill="#3a3a32" font-size="11">DELAY · PT2399</text>
-    <rect x="40" y="1906" width="380" height="90"/>
-    <text x="50" y="1926" fill="#3a3a32" font-size="9">2 V+ · 3,4 GND · 6,7 OSC (time R)</text>
-    <text x="50" y="1944" fill="#3a3a32" font-size="9">14 IN+ / 15 IN− · 12 OUT+ / 13 OUT−</text>
-    <text x="50" y="1962" fill="#3a3a32" font-size="9">time pot 20k–50k · feedback pot</text>
-    <text x="230" y="1990" text-anchor="middle" fill="#3a3a32" font-size="11">U9</text>
-    <path d="M 100 1906 Q 100 1882 230 1882 Q 280 1882 280 1906"/>
-    <text x="180" y="1878" fill="#3a3a32" font-size="8">fb pot</text>
+    <text x="40" y="1041.7" fill="#4a4a40" font-size="11">DELAY · PT2399</text>
+    <rect x="40" y="1048.3" width="380" height="90"/>
+    <text x="50" y="1059.3" fill="#4a4a40" font-size="9">2 V+ · 3,4 GND · 6,7 OSC (time R)</text>
+    <text x="50" y="1069.2" fill="#4a4a40" font-size="9">14 IN+ / 15 IN− · 12 OUT+ / 13 OUT−</text>
+    <text x="50" y="1079.1" fill="#4a4a40" font-size="9">time pot 20k–50k · feedback pot</text>
+    <text x="230" y="1094.5" text-anchor="middle" fill="#4a4a40" font-size="11">U9</text>
+    <path d="M 100 1048.3 Q 100 1035.1 230 1035.1 Q 280 1035.1 280 1048.3"/>
+    <text x="180" y="1032.9" fill="#4a4a40" font-size="8">fb pot</text>
 
-    <text x="40" y="2034" fill="#3a3a32" font-size="11">REVERB · spring tank</text>
-    <rect x="40" y="2046" width="380" height="90"/>
-    <text x="50" y="2066" fill="#3a3a32" font-size="9">drive xfmr · Q3 2N3904 · spring tank 8Ω</text>
-    <text x="50" y="2084" fill="#3a3a32" font-size="9">recovery TL072 · 100×</text>
-    <text x="50" y="2102" fill="#3a3a32" font-size="9">tone HPF 80 Hz · level pot</text>
-    <text x="230" y="2130" text-anchor="middle" fill="#3a3a32" font-size="11">U10</text>
+    <text x="40" y="1118.7" fill="#4a4a40" font-size="11">REVERB · spring tank</text>
+    <rect x="40" y="1125.3" width="380" height="90"/>
+    <text x="50" y="1136.3" fill="#4a4a40" font-size="9">drive xfmr · Q3 2N3904 · spring tank 8Ω</text>
+    <text x="50" y="1146.2" fill="#4a4a40" font-size="9">recovery TL072 · 100×</text>
+    <text x="50" y="1156.1" fill="#4a4a40" font-size="9">tone HPF 80 Hz · level pot</text>
+    <text x="230" y="1171.5" text-anchor="middle" fill="#4a4a40" font-size="11">U10</text>
 
     <!-- ===== MIXER ===== -->
-    <text x="40" y="2174" fill="#3a3a32" font-size="11">MIX · TL072 SUMMING</text>
-    <polygon points="200,2196 200,2256 260,2226" fill="none"/>
-    <text x="210" y="2210" fill="#3a3a32" font-size="9">−</text>
-    <text x="210" y="2250" fill="#3a3a32" font-size="9">+</text>
-    <text x="220" y="2272" fill="#3a3a32" font-size="9">U8</text>
-    <polyline points="220,2184 226,2178 234,2190 242,2178 250,2190 258,2178 266,2190 270,2184"/>
-    <text x="230" y="2172" fill="#3a3a32" font-size="8">Rf 47k</text>
-    <line x1="260" y1="2226" x2="280" y2="2226"/>
-    <line x1="280" y1="2226" x2="280" y2="2184"/>
-    <line x1="200" y1="2206" x2="190" y2="2206"/>
-    <line x1="190" y1="2206" x2="190" y2="2184"/>
-    <line x1="190" y1="2184" x2="280" y2="2184"/>
-    <line x1="200" y1="2246" x2="190" y2="2246"/>
-    <path d="M182 2246 L198 2246 M184 2251 L196 2251 M187 2256 L193 2256"/>
+    <text x="40" y="1195.7" fill="#4a4a40" font-size="11">MIX · TL072 SUMMING</text>
+    <polygon points="200,1207.8 200,1240.8 260,1224.3" fill="none"/>
+    <text x="210" y="1215.5" fill="#4a4a40" font-size="9">−</text>
+    <text x="210" y="1237.5" fill="#4a4a40" font-size="9">+</text>
+    <text x="220" y="1249.6" fill="#4a4a40" font-size="9">U8</text>
+    <polyline points="220,1201.2 226,1197.9 234,1204.5 242,1197.9 250,1204.5 258,1197.9 266,1204.5 270,1201.2"/>
+    <text x="230" y="1194.6" fill="#4a4a40" font-size="8">Rf 47k</text>
+    <line x1="260" y1="1224.3" x2="280" y2="1224.3"/>
+    <line x1="280" y1="1224.3" x2="280" y2="1201.2"/>
+    <line x1="200" y1="1213.3" x2="190" y2="1213.3"/>
+    <line x1="190" y1="1213.3" x2="190" y2="1201.2"/>
+    <line x1="190" y1="1201.2" x2="280" y2="1201.2"/>
+    <line x1="200" y1="1235.3" x2="190" y2="1235.3"/>
+    <path d="M182 1235.3 L198 1235.3 M184 1238.05 L196 1238.05 M187 1240.8 L193 1240.8"/>
     <!-- input lines from voices via 22k each -->
     <g>
-      <line x1="40" y1="2204" x2="200" y2="2204"/>
-      <line x1="40" y1="2216" x2="200" y2="2216"/>
-      <line x1="40" y1="2228" x2="200" y2="2228"/>
-      <line x1="40" y1="2240" x2="200" y2="2240"/>
+      <line x1="40" y1="1212.2" x2="200" y2="1212.2"/>
+      <line x1="40" y1="1218.8" x2="200" y2="1218.8"/>
+      <line x1="40" y1="1225.4" x2="200" y2="1225.4"/>
+      <line x1="40" y1="1232.0" x2="200" y2="1232.0"/>
     </g>
-    <g font-size="8" fill="#3a3a32">
-      <text x="26" y="2208" text-anchor="end">K 22k</text>
-      <text x="26" y="2220" text-anchor="end">S 22k</text>
-      <text x="26" y="2232" text-anchor="end">H 22k</text>
-      <text x="26" y="2244" text-anchor="end">A 22k</text>
+    <g font-size="8" fill="#4a4a40">
+      <text x="26" y="1214.4" text-anchor="end">K 22k</text>
+      <text x="26" y="1221.0" text-anchor="end">S 22k</text>
+      <text x="26" y="1227.6" text-anchor="end">H 22k</text>
+      <text x="26" y="1234.2" text-anchor="end">A 22k</text>
     </g>
 
     <!-- ===== MASTER + OUT ===== -->
-    <text x="40" y="2340" fill="#3a3a32" font-size="11">MASTER · TL072 + OUT JACK</text>
-    <polygon points="40,2358 40,2418 96,2388" fill="none"/>
-    <text x="50" y="2372" fill="#3a3a32" font-size="9">−</text>
-    <text x="50" y="2412" fill="#3a3a32" font-size="9">+</text>
-    <text x="60" y="2434" fill="#3a3a32" font-size="9">U11</text>
-    <line x1="280" y1="2226" x2="280" y2="2376"/>
-    <line x1="280" y1="2376" x2="40" y2="2376"/>
-    <text x="120" y="2370" fill="#3a3a32" font-size="8">from Σ</text>
-    <line x1="96" y1="2388" x2="130" y2="2388"/>
+    <text x="40" y="1287.0" fill="#4a4a40" font-size="11">MASTER · TL072 + OUT JACK</text>
+    <polygon points="40,1296.9 40,1329.9 96,1313.4" fill="none"/>
+    <text x="50" y="1304.6" fill="#4a4a40" font-size="9">−</text>
+    <text x="50" y="1326.6" fill="#4a4a40" font-size="9">+</text>
+    <text x="60" y="1338.7" fill="#4a4a40" font-size="9">U11</text>
+    <line x1="280" y1="1224.3" x2="280" y2="1306.8"/>
+    <line x1="280" y1="1306.8" x2="40" y2="1306.8"/>
+    <text x="120" y="1303.5" fill="#4a4a40" font-size="8">from Σ</text>
+    <line x1="96" y1="1313.4" x2="130" y2="1313.4"/>
     <!-- AC out cap -->
-    <line x1="130" y1="2380" x2="130" y2="2396"/>
-    <line x1="138" y1="2380" x2="138" y2="2396"/>
-    <text x="133" y="2374" fill="#3a3a32" font-size="8">10uF</text>
-    <line x1="138" y1="2388" x2="180" y2="2388"/>
-    <circle cx="195" cy="2388" r="9"/>
-    <text x="215" y="2393" fill="#3a3a32" font-size="11">OUT</text>
-    <line x1="195" y1="2397" x2="195" y2="2418"/>
-    <path d="M186 2418 L204 2418 M188 2423 L202 2423 M191 2428 L197 2428"/>
+    <line x1="130" y1="1309.0" x2="130" y2="1317.8"/>
+    <line x1="138" y1="1309.0" x2="138" y2="1317.8"/>
+    <text x="133" y="1305.7" fill="#4a4a40" font-size="8">10uF</text>
+    <line x1="138" y1="1313.4" x2="180" y2="1313.4"/>
+    <circle cx="195" cy="1313.4" r="9"/>
+    <text x="215" y="1316.15" fill="#4a4a40" font-size="11">OUT</text>
+    <line x1="195" y1="1318.35" x2="195" y2="1329.9"/>
+    <path d="M186 1329.9 L204 1329.9 M188 1332.65 L202 1332.65 M191 1335.4 L197 1335.4"/>
 
-    <line x1="30" y1="2540" x2="470" y2="2540" stroke-dasharray="2 3"/>
-    <text x="474" y="2544" fill="#3a3a32" font-size="9">GND</text>
+    <line x1="30" y1="1397.0" x2="470" y2="1397.0" stroke-dasharray="2 3"/>
+    <text x="474" y="1399.2" fill="#4a4a40" font-size="9">GND</text>
   </g>
 </svg>
 <canvas id="bgScope" aria-hidden="true"></canvas>
@@ -1383,7 +1386,6 @@
   </div>
   <div class="foot-meta">
     <span>MOD.WAV</span>
-    <span id="year"></span>
   </div>
 </footer>
 
