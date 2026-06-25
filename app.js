@@ -210,6 +210,14 @@ function totalSteps(){ return STEPS * numBars; }
 function absStep(s){ return currentBar * STEPS + s; } // visual 0–15 → absolute index
 let TEMPO_BPM = 140;
 let STEP_SECONDS = 60 / TEMPO_BPM / 4;
+// Swing: 50 = straight; 75 = max shuffle. Delays every weak 16th (odd absolute
+// step) by a fraction of STEP_SECONDS — bar duration stays the same.
+let swingPct = 50;
+// ADSR scaling: 0 = voice envelopes as authored; 100 = ENV_MAX_MULT× as slow.
+// Multiplies the time-literals inside playKick/Snare/Hat/Acid/FM (see envMult()).
+let adsrScale = 0;
+const ENV_MAX_MULT = 5;
+function envMult(){ return 1 + (adsrScale / 100) * (ENV_MAX_MULT - 1); }
 let delayNodeRef = null;
 let delayFbRef = null;          // delay feedback gain — mutated by the delay FX popup
 let delayDampRef = null;        // delay tone (lowpass) filter — mutated by the delay FX popup
@@ -301,7 +309,7 @@ function saveStateNow(){
       v: 1,
       pattern, acidNotes: ACID_NOTES, acidAccent: ACID_ACCENT,
       fmRatio: FM_RATIO, fmIndex: FM_INDEX,
-      numBars, currentBar, tempo: TEMPO_BPM, acidInstrument,
+      numBars, currentBar, tempo: TEMPO_BPM, swing: swingPct, adsr: adsrScale, acidInstrument,
       trackSends: trackSendValues, trackMute, trackSolo,
       fx: {
         delayBus: delayBusValue, reverbBus: reverbBusValue,
@@ -348,6 +356,8 @@ addEventListener('visibilitychange', () => {
     TEMPO_BPM = Math.max(60, Math.min(180, Math.round(s.tempo)));
     STEP_SECONDS = 60 / TEMPO_BPM / 4;
   }
+  if(typeof s.swing === 'number') swingPct = Math.max(50, Math.min(75, Math.round(s.swing)));
+  if(typeof s.adsr === 'number') adsrScale = Math.max(0, Math.min(100, Math.round(s.adsr)));
   if(s.acidInstrument === 'fm' || s.acidInstrument === 'acid') acidInstrument = s.acidInstrument;
   if(s.trackSends) Object.keys(trackSendValues).forEach(id => {
     if(s.trackSends[id]) Object.assign(trackSendValues[id], s.trackSends[id]);
@@ -853,6 +863,40 @@ bpmAmtEl.addEventListener('keydown', (e)=>{
   });
 })();
 
+// SWING + ADSR knobs live in .ctrl-row next to the BPM pill. Layout:
+// [▶] [BPM 140] [SWING N%] [ADSR N%]. Knobs are 0–100; SWING maps to 50–75%
+// (50 = straight); ADSR is 0–100% directly.
+const ctrlRowEl = document.querySelector('.ctrl-row');
+function makeLabeledKnob(label, knobValue, fmt, onChange, title){
+  const wrap = document.createElement('div');
+  wrap.className = 'tempo-ctrl';
+  const lab = document.createElement('span');
+  lab.className = 'tempo-label mono';
+  lab.textContent = label;
+  const val = document.createElement('span');
+  val.className = 'tempo-label mono';
+  val.textContent = fmt(knobValue);
+  const knob = makeKnob(knobValue, (v) => {
+    val.textContent = fmt(v);
+    onChange(v);
+  }, title);
+  wrap.appendChild(lab);
+  wrap.appendChild(knob);
+  wrap.appendChild(val);
+  return { wrap, knob, setValue: (v) => { knob.setValue(v); val.textContent = fmt(v); } };
+}
+// SWING knob: 0–100 → swingPct 50–75 (50% = straight; 75% = max shuffle).
+const swingKnobCtl = makeLabeledKnob('SWING', (swingPct - 50) * 4,
+  v => (50 + v / 4).toFixed(0) + '%',
+  v => { swingPct = 50 + v / 4; },
+  'Swing — delays every weak 16th (50% = straight, 75% = max shuffle)');
+const adsrKnobCtl  = makeLabeledKnob('ADSR',  adsrScale,
+  v => v + '%',
+  v => { adsrScale = v; },
+  'ADSR time scaling — stretches voice envelopes');
+ctrlRowEl.appendChild(swingKnobCtl.wrap);
+ctrlRowEl.appendChild(adsrKnobCtl.wrap);
+
 function makeImpulseResponse(ctx, duration, decay){
   const rate = ctx.sampleRate;
   const length = Math.floor(rate * duration);
@@ -864,6 +908,26 @@ function makeImpulseResponse(ctx, duration, decay){
     }
   }
   return ir;
+}
+
+// Master limiter — tanh soft-clip at -6 dBFS with 4× oversampling so inter-sample
+// (true) peaks get caught. Invisible/fixed: no UI, no state, same node in live
+// and offline graphs. Sits between the analyser/master and destination.
+function makeLimiterCurve(){
+  const n = 8192;
+  const curve = new Float32Array(n);
+  const ceiling = 0.5; // -6 dB linear
+  for(let i = 0; i < n; i++){
+    const x = (i / (n - 1)) * 2 - 1;
+    curve[i] = ceiling * Math.tanh(x);
+  }
+  return curve;
+}
+function makeMasterLimiter(audioCtx){
+  const ws = audioCtx.createWaveShaper();
+  ws.curve = makeLimiterCurve();
+  ws.oversample = '4x';
+  return ws;
 }
 
 function ensureAudio(){
@@ -920,7 +984,9 @@ function ensureAudio(){
   reverb.connect(reverbReturn);
   reverbReturn.connect(analyser);
 
-  analyser.connect(ctx.destination);
+  const limiter = makeMasterLimiter(ctx);
+  analyser.connect(limiter);
+  limiter.connect(ctx.destination);
 
   // per-track output gain + sends into the shared delay/reverb buses
   TRACKS.forEach(track=>{
@@ -955,16 +1021,17 @@ function ensureAudio(){
 }
 
 function playKick(ctx, t, dest){
+  const m = envMult();
   const osc = ctx.createOscillator();
   osc.type = 'triangle';
   osc.frequency.setValueAtTime(38.7, t);
-  osc.frequency.exponentialRampToValueAtTime(106.8, t + 0.001);
-  osc.frequency.exponentialRampToValueAtTime(32, t + 0.14);
+  osc.frequency.exponentialRampToValueAtTime(106.8, t + 0.001 * m);
+  osc.frequency.exponentialRampToValueAtTime(32, t + 0.14 * m);
 
   const ampEnv = ctx.createGain();
   ampEnv.gain.setValueAtTime(0.0001, t);
-  ampEnv.gain.exponentialRampToValueAtTime(1.0, t + 0.002);
-  ampEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+  ampEnv.gain.exponentialRampToValueAtTime(1.0, t + 0.002 * m);
+  ampEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.55 * m);
 
   const shaper = ctx.createWaveShaper();
   const curve = new Float32Array(256);
@@ -976,7 +1043,7 @@ function playKick(ctx, t, dest){
   click.frequency.value = 1800;
   const clickEnv = ctx.createGain();
   clickEnv.gain.setValueAtTime(0.18, t);
-  clickEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.006);
+  clickEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.006 * m);
 
   osc.connect(shaper);
   shaper.connect(ampEnv);
@@ -984,11 +1051,12 @@ function playKick(ctx, t, dest){
   click.connect(clickEnv);
   clickEnv.connect(dest);
 
-  osc.start(t); osc.stop(t + 0.58);
-  click.start(t); click.stop(t + 0.01);
+  osc.start(t); osc.stop(t + 0.58 * m);
+  click.start(t); click.stop(t + 0.01 * m);
 }
 
 function playSnare(ctx, t, dest){
+  const m = envMult();
   const osc1 = ctx.createOscillator();
   osc1.type = 'triangle';
   osc1.frequency.value = 190;
@@ -998,13 +1066,13 @@ function playSnare(ctx, t, dest){
 
   const bodyEnv = ctx.createGain();
   bodyEnv.gain.setValueAtTime(0.45, t);
-  bodyEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+  bodyEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.13 * m);
 
   osc1.connect(bodyEnv);
   osc2.connect(bodyEnv);
   bodyEnv.connect(dest);
-  osc1.start(t); osc1.stop(t + 0.14);
-  osc2.start(t); osc2.stop(t + 0.14);
+  osc1.start(t); osc1.stop(t + 0.14 * m);
+  osc2.start(t); osc2.stop(t + 0.14 * m);
 
   const bufferSize = ctx.sampleRate * 0.2;
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -1024,17 +1092,18 @@ function playSnare(ctx, t, dest){
 
   const noiseEnv = ctx.createGain();
   noiseEnv.gain.setValueAtTime(0.55, t);
-  noiseEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+  noiseEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.16 * m);
 
   noise.connect(highpass);
   highpass.connect(bandpass);
   bandpass.connect(noiseEnv);
   noiseEnv.connect(dest);
   noise.start(t);
-  noise.stop(t + 0.18);
+  noise.stop(t + 0.18 * m);
 }
 
 function playHat(ctx, t, dest){
+  const m = envMult();
   const ratios = [1, 1.342, 1.787, 2.0, 2.245, 2.6];
   const fundamental = 245;
   const hatGain = ctx.createGain();
@@ -1045,7 +1114,7 @@ function playHat(ctx, t, dest){
 
   const env = ctx.createGain();
   env.gain.setValueAtTime(0.28, t);
-  env.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + 0.05 * m);
 
   ratios.forEach(r=>{
     const o = ctx.createOscillator();
@@ -1053,7 +1122,7 @@ function playHat(ctx, t, dest){
     o.frequency.value = fundamental * r;
     o.connect(hatGain);
     o.start(t);
-    o.stop(t + 0.06);
+    o.stop(t + 0.06 * m);
   });
 
   hatGain.connect(highpass);
@@ -1096,7 +1165,7 @@ function playAcid(ctx, t, stepIndex, dest){
 
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(0.0001, t);
-  gain.gain.exponentialRampToValueAtTime(peakGain, t + 0.006);
+  gain.gain.exponentialRampToValueAtTime(peakGain, t + 0.006 * envMult());
   gain.gain.exponentialRampToValueAtTime(0.0001, t + noteLen);
 
   osc.connect(filter);
@@ -1131,7 +1200,7 @@ function playFM(ctx, t, stepIndex, dest){
   const ampEnv = ctx.createGain();
   const peakGain = accented ? 0.36 : 0.24;
   ampEnv.gain.setValueAtTime(0.0001, t);
-  ampEnv.gain.exponentialRampToValueAtTime(peakGain, t + 0.006);
+  ampEnv.gain.exponentialRampToValueAtTime(peakGain, t + 0.006 * envMult());
   ampEnv.gain.exponentialRampToValueAtTime(0.0001, t + noteLen);
 
   carrier.connect(ampEnv);
@@ -1182,7 +1251,10 @@ function highlightPlayhead(stepIndex){
 
 function schedulerLoop(){
   while(nextStepTime < ctx.currentTime + SCHEDULE_AHEAD){
-    scheduleStep(currentStep, nextStepTime);
+    // Swing: only the weak 16th (odd absolute step) is delayed; pacing
+    // (nextStepTime) is untouched so the bar duration stays exact.
+    const swingOffset = (currentStep % 2) * (swingPct - 50) / 100 * STEP_SECONDS;
+    scheduleStep(currentStep, nextStepTime + swingOffset);
     nextStepTime += STEP_SECONDS;
     // increment first, then if we just crossed into a new bar, apply any
     // pending length change — guarantees the audible bar plays out fully and
@@ -1414,9 +1486,16 @@ const EXPORT_SR = 44100;
 // rebuild the live FX topology (per-track gain + delay/reverb buses) inside an
 // offline context so exported audio matches what you hear.
 function buildOfflineGraph(octx, trackIds){
+  // Same limiter shape as the live path — sits between every signal source
+  // and the destination so true peaks get caught on export too. Routing the
+  // FX returns through it (not just master) was the bug-bait the spec warned
+  // about: otherwise the limiter only clips the dry signal.
+  const limiter = makeMasterLimiter(octx);
+  limiter.connect(octx.destination);
+
   const master = octx.createGain();
   master.gain.value = 0.6;
-  master.connect(octx.destination);
+  master.connect(limiter);
 
   const delayBusInput = octx.createGain();
   const delayNode = octx.createDelay(5.0);
@@ -1431,7 +1510,7 @@ function buildOfflineGraph(octx, trackIds){
   delayDamp.connect(delayFb);
   delayFb.connect(delayNode);
   delayDamp.connect(delayReturn);
-  delayReturn.connect(octx.destination);
+  delayReturn.connect(limiter);
 
   const reverbBusInput = octx.createGain();
   const reverb = octx.createConvolver();
@@ -1440,7 +1519,7 @@ function buildOfflineGraph(octx, trackIds){
   reverbReturn.gain.value = reverbBusValue / 100;
   reverbBusInput.connect(reverb);
   reverb.connect(reverbReturn);
-  reverbReturn.connect(octx.destination);
+  reverbReturn.connect(limiter);
 
   const gains = {};
   trackIds.forEach(id=>{
@@ -1784,6 +1863,14 @@ function rndFxReverb(){
 function rndBpm(){
   setTempo(_ri(60, 180));
 }
+function rndSwing(){
+  swingPct = _ri(50, 75);
+  swingKnobCtl.setValue((swingPct - 50) * 4);
+}
+function rndAdsr(){
+  adsrScale = _ri(0, 100);
+  adsrKnobCtl.setValue(adsrScale);
+}
 
 const RND_TREE = [
   { id: 'all', label: 'ALL', children: [
@@ -1805,6 +1892,8 @@ const RND_TREE = [
       { id: 'fx.reverb', label: 'reverb', apply: rndFxReverb },
     ]},
     { id: 'bpm', label: 'BPM', apply: rndBpm },
+    { id: 'swing', label: 'swing', apply: rndSwing },
+    { id: 'adsr', label: 'ADSR', apply: rndAdsr },
   ]},
 ];
 
@@ -1924,3 +2013,5 @@ document.addEventListener('pointerdown', (e) => {
 setTempo(TEMPO_BPM);
 renderPage();
 setAcidInstrument(acidInstrument);
+swingKnobCtl.setValue((swingPct - 50) * 4);
+adsrKnobCtl.setValue(adsrScale);
