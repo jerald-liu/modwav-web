@@ -366,11 +366,10 @@
      does the work. Kept: opacity, trace color, pointer-events, blur (aesthetic). */
   body{ position: relative; overflow-x: hidden; }
   .circuit-bg{
-    position: fixed;
+    position: absolute;
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    overflow: hidden;
     opacity: 0.6;
     --trace: #6e2e2e;
   }
