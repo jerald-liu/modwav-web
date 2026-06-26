@@ -284,6 +284,12 @@ TRACKS.forEach(t => pattern[t.id] = DEFAULT_PATTERN[t.id].slice());
 const trackMute = {};
 const trackSolo = {};
 const muteButtons = {};
+// Per-track transposition in semitones, range -12..+12 (±1 octave). Applied as
+// a frequency multiplier inside each voice fn: 2^(semitones/12). Synths shift
+// the MIDI note before midiToFreq; drums multiply their oscillator frequencies.
+const trackTranspose = { kick: 0, snare: 0, hat: 0, acid: 0 };
+const transposeCtls = {}; // octave-pill controllers, populated below; used by loadState/randomize
+function trackPitchMult(id){ return Math.pow(2, (trackTranspose[id] || 0) / 12); }
 TRACKS.forEach(t => { trackMute[t.id] = false; trackSolo[t.id] = false; });
 function unmuteAll(){
   TRACKS.forEach(t => {
@@ -314,7 +320,7 @@ function saveStateNow(){
       pattern, acidNotes: ACID_NOTES, acidAccent: ACID_ACCENT,
       fmRatio: FM_RATIO, fmIndex: FM_INDEX,
       numBars, currentBar, tempo: TEMPO_BPM, swing: swingPct, adsr: adsrScale, acidInstrument,
-      trackSends: trackSendValues, trackMute, trackSolo,
+      trackSends: trackSendValues, trackMute, trackSolo, trackTranspose,
       fx: {
         delayBus: delayBusValue, reverbBus: reverbBusValue,
         delayFb: delayFbValue, delayDiv: delayDivIndex, delayTone,
@@ -368,6 +374,10 @@ addEventListener('visibilitychange', () => {
   });
   if(s.trackMute) Object.assign(trackMute, s.trackMute);
   if(s.trackSolo) Object.assign(trackSolo, s.trackSolo);
+  if(s.trackTranspose) Object.keys(trackTranspose).forEach(id => {
+    const v = s.trackTranspose[id];
+    if(typeof v === 'number') trackTranspose[id] = Math.max(-12, Math.min(12, Math.round(v)));
+  });
   if(s.fx){
     const fx = s.fx;
     if(typeof fx.delayBus === 'number')   delayBusValue  = fx.delayBus;
@@ -453,7 +463,12 @@ TRACKS.forEach((track, ti)=>{
     soloBtn.classList.toggle('active', trackSolo[track.id]);
     saveStateSoon();
   });
-  ctrl.append(muteBtn, soloBtn);
+  // Per-track octave pill: vertical-drag transpose ±12 semitones. Lives inline
+  // with M/S inside .track-ctrl to keep .seq-label single-row (modal height
+  // constraint — see CSS comment).
+  const oct = makeOctavePill(track.id);
+  transposeCtls[track.id] = oct;
+  ctrl.append(oct.el, muteBtn, soloBtn);
   label.appendChild(ctrl);
   seqEl.appendChild(label);
 
@@ -810,6 +825,54 @@ function makeKnob(value, onInput, title){
   return knob;
 }
 
+// Octave pill: ±12 semitone vertical-drag transposer per track. Same gesture as
+// the BPM pill (drag up/down, ns-resize cursor) but smaller, and rendered as a
+// .tempo-ctrl with the .octave modifier. Returns { el, setValue(semitones) }.
+function makeOctavePill(trackId){
+  const PX_PER_SEMI = 6;
+  const el = document.createElement('div');
+  el.className = 'tempo-ctrl octave';
+  el.title = `${trackId} octave (±12 semitones)`;
+  const lab = document.createElement('span');
+  lab.className = 'tempo-label mono';
+  lab.textContent = 'OCT';
+  const val = document.createElement('span');
+  val.className = 'tempo-label mono octave-val';
+  function fmt(n){ return (n > 0 ? '+' : '') + n; }
+  function setVal(v){
+    v = Math.max(-12, Math.min(12, Math.round(v)));
+    trackTranspose[trackId] = v;
+    val.textContent = fmt(v);
+  }
+  setVal(trackTranspose[trackId] || 0);
+  el.appendChild(lab);
+  el.appendChild(val);
+  let dragging = false, startY = 0, startVal = 0;
+  el.addEventListener('pointerdown', (e)=>{
+    if(e.button !== 0) return;
+    dragging = true; startY = e.clientY; startVal = trackTranspose[trackId];
+    try { el.setPointerCapture(e.pointerId); } catch(_){}
+    el.classList.add('dragging');
+    e.preventDefault();
+  });
+  el.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    setVal(startVal + Math.round((startY - e.clientY) / PX_PER_SEMI));
+    saveStateSoon();
+  });
+  function end(e){
+    if(!dragging) return;
+    dragging = false;
+    try { el.releasePointerCapture(e.pointerId); } catch(_){}
+    el.classList.remove('dragging');
+  }
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  // double-click resets to 0 (matches the convention of nuking a transposition)
+  el.addEventListener('dblclick', ()=>{ setVal(0); saveStateSoon(); });
+  return { el, setValue: setVal };
+}
+
 const toggleBtn = document.getElementById('synthToggle');
 const statusDot = document.getElementById('statusDot');
 const modalDot = document.getElementById('modalDot');
@@ -856,15 +919,24 @@ bpmAmtEl.addEventListener('keydown', (e)=>{
     if(Math.abs(dy) > 3) moved = true;
     setTempo(startBpm + Math.round(dy / PX_PER_BPM));
   });
-  tempoCtrlEl.addEventListener('pointerup', (e)=>{
+  // pointerup is the normal end. pointercancel fires on system gestures, focus
+  // loss, or releasing outside the viewport — without handling it the .dragging
+  // highlight would stick on (visible bug where the BPM pill stayed
+  // phosphor-bordered after dragging off-screen).
+  function endTempoDrag(e){
     if(!dragging) return;
     dragging = false;
     try { tempoCtrlEl.releasePointerCapture(e.pointerId); } catch(_){}
     tempoCtrlEl.classList.remove('dragging');
-    if(!moved && e.target === bpmAmtEl){
+    if(!moved && e && e.target === bpmAmtEl){
       bpmAmtEl.focus(); bpmAmtEl.select();
     }
-  });
+  }
+  tempoCtrlEl.addEventListener('pointerup', endTempoDrag);
+  tempoCtrlEl.addEventListener('pointercancel', endTempoDrag);
+  // safety net: if focus leaves the page mid-drag, neither pointerup nor
+  // pointercancel may fire on the captured element. blur on window clears it.
+  window.addEventListener('blur', () => endTempoDrag(null));
 })();
 
 // SWING + ADSR knobs live in .ctrl-row next to the BPM pill. Layout:
@@ -1030,11 +1102,12 @@ function playKick(ctx, t, dest){
   // click osc + click envelope — must NOT scale with ADSR. At m=5 a scaled
   // click stretches a 1800Hz square out to 30ms, which reads as a staccato
   // high-pitched chirp instead of a kick attack. Only the body/release stretches.
+  const p = trackPitchMult('kick');
   const osc = ctx.createOscillator();
   osc.type = 'triangle';
-  osc.frequency.setValueAtTime(38.7, t);
-  osc.frequency.exponentialRampToValueAtTime(106.8, t + 0.001);
-  osc.frequency.exponentialRampToValueAtTime(32, t + 0.14 * m);
+  osc.frequency.setValueAtTime(38.7 * p, t);
+  osc.frequency.exponentialRampToValueAtTime(106.8 * p, t + 0.001);
+  osc.frequency.exponentialRampToValueAtTime(32 * p, t + 0.14 * m);
 
   const ampEnv = ctx.createGain();
   ampEnv.gain.setValueAtTime(0.0001, t);
@@ -1065,12 +1138,13 @@ function playKick(ctx, t, dest){
 
 function playSnare(ctx, t, dest){
   const m = envMult();
+  const p = trackPitchMult('snare');
   const osc1 = ctx.createOscillator();
   osc1.type = 'triangle';
-  osc1.frequency.value = 190;
+  osc1.frequency.value = 190 * p;
   const osc2 = ctx.createOscillator();
   osc2.type = 'triangle';
-  osc2.frequency.value = 264;
+  osc2.frequency.value = 264 * p;
 
   const bodyEnv = ctx.createGain();
   bodyEnv.gain.setValueAtTime(0.225, t);                            // -6 dB (was 0.45)
@@ -1113,7 +1187,7 @@ function playSnare(ctx, t, dest){
 function playHat(ctx, t, dest){
   const m = envMult();
   const ratios = [1, 1.342, 1.787, 2.0, 2.245, 2.6];
-  const fundamental = 245;
+  const fundamental = 245 * trackPitchMult('hat');
   const hatGain = ctx.createGain();
 
   const highpass = ctx.createBiquadFilter();
@@ -1146,7 +1220,7 @@ function stepWobble(stepIndex, salt){
 }
 
 function playAcid(ctx, t, stepIndex, dest){
-  const note = ACID_NOTES[stepIndex % ACID_NOTES.length];
+  const note = ACID_NOTES[stepIndex % ACID_NOTES.length] + trackTranspose.acid;
   const freq = midiToFreq(note);
   const accented = !!ACID_ACCENT[stepIndex % ACID_ACCENT.length];
 
@@ -1184,7 +1258,7 @@ function playAcid(ctx, t, stepIndex, dest){
 }
 
 function playFM(ctx, t, stepIndex, dest){
-  const note = ACID_NOTES[stepIndex];
+  const note = ACID_NOTES[stepIndex] + trackTranspose.acid;
   const freq = midiToFreq(note);
   const ratio = FM_RATIO[stepIndex];
   const index = FM_INDEX[stepIndex];
@@ -1848,6 +1922,10 @@ function rndFmIndex(){
   const n = totalSteps();
   for(let i = 0; i < n; i++) FM_INDEX[i] = _ri(0, 80) * 5;                  // 0–400 step 5
 }
+function rndOctave(id){
+  const v = _ri(-12, 12);
+  transposeCtls[id]?.setValue(v);
+}
 function rndSend(id, kind){
   const v = _ri(0, 100);
   trackSendValues[id][kind] = v;
@@ -1886,6 +1964,7 @@ const RND_TREE = [
       id: t.id, label: t.label.charAt(0) + t.label.slice(1).toLowerCase(),
       children: [
         { id: `${t.id}.steps`,  label: 'steps',       apply: () => rndSteps(t.id) },
+        { id: `${t.id}.octave`, label: 'octave',      apply: () => rndOctave(t.id) },
         ...(t.id === 'acid' ? [
           { id: 'acid.pitch',    label: 'pitch',      apply: rndPitch },
           { id: 'acid.fmRatio',  label: 'FM ratio',   apply: rndFmRatio },
