@@ -384,7 +384,7 @@
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
-    opacity: 0.6;
+    opacity: 0.38;
     --trace: #6e2e2e;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%);
@@ -400,8 +400,8 @@
        0.3px diffusion. drop-shadow respects alpha so the glow tracks the
        circuit shape rather than the SVG bbox. */
     filter: blur(0.3px)
-      drop-shadow(0 0 3px rgba(180,60,60,0.85))
-      drop-shadow(0 0 10px rgba(140,40,40,0.55));
+      drop-shadow(0 0 2px rgba(180,60,60,0.55))
+      drop-shadow(0 0 8px rgba(140,40,40,0.3));
   }
   @media (max-width: 720px){
     /* mobile: full diagram fit (meet) behind the text, faded top/bottom */
