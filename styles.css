@@ -409,7 +409,9 @@
     right: 0;
     width: 100%;
     height: 9vh;
-    z-index: 0;
+    /* above .nav (z:50) so its backdrop-filter:blur doesn't smear the waveform.
+       pointer-events:none keeps nav clicks pass-through. */
+    z-index: 60;
     pointer-events: none;
     opacity: 0.55;
     filter: drop-shadow(0 0 6px var(--phosphor)) drop-shadow(0 0 14px rgba(143,255,196,0.35));
