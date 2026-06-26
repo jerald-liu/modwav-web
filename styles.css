@@ -396,9 +396,12 @@
     width: 112%;
     height: auto;
     flex-shrink: 0;
-    /* Soft red glow on the traces + the original 0.3px diffusion. drop-shadow
-       respects alpha so it tracks the circuit shape rather than the SVG bbox. */
-    filter: blur(0.3px) drop-shadow(0 0 1.5px rgba(110,46,46,0.55));
+    /* Layered red glow on the traces (inner halo + wider bloom) + the original
+       0.3px diffusion. drop-shadow respects alpha so the glow tracks the
+       circuit shape rather than the SVG bbox. */
+    filter: blur(0.3px)
+      drop-shadow(0 0 3px rgba(180,60,60,0.85))
+      drop-shadow(0 0 10px rgba(140,40,40,0.55));
   }
   @media (max-width: 720px){
     /* mobile: full diagram fit (meet) behind the text, faded top/bottom */
