@@ -31,14 +31,18 @@ synthOverlay.addEventListener('click', (e)=>{
 const navEl = document.querySelector('.nav');
 const bgScopeEl = document.getElementById('bgScope');
 const NAV_FADE_PX = 90; // fully faded before content scrolls up into the banner
-// Waveform is hidden while the nav is fully visible (top of page) so the nav
-// band reads clean, then cross-fades in as the nav fades out.
 const SCOPE_BASE_OPACITY = 0.55; // matches the original #bgScope opacity
+// When the user STARTS playback while at the top, we want to force the nav out
+// and bring the waveform in — same end-state as scrolling down. CSS transitions
+// (added to .nav + #bgScope) make this a smooth cross-fade.
+let playFadeOverride = false; // true while running — drives nav→0, scope→full
 function updateNavFade(){
-  const navO = Math.max(0, 1 - window.scrollY / NAV_FADE_PX);
+  const scrollO = Math.max(0, 1 - window.scrollY / NAV_FADE_PX);
+  const navO = playFadeOverride ? 0 : scrollO;
   navEl.style.opacity = navO.toFixed(3);
   if(bgScopeEl) bgScopeEl.style.opacity = (SCOPE_BASE_OPACITY * (1 - navO)).toFixed(3);
 }
+function setPlayFadeOverride(on){ playFadeOverride = on; updateNavFade(); }
 window.addEventListener('scroll', updateNavFade, { passive: true });
 updateNavFade();
 
@@ -837,10 +841,7 @@ function makeOctavePill(trackId){
   const PX_PER_SEMI = 6;
   const el = document.createElement('div');
   el.className = 'tempo-ctrl octave';
-  el.title = `${trackId} octave (±12 semitones)`;
-  const lab = document.createElement('span');
-  lab.className = 'tempo-label mono';
-  lab.textContent = 'OCT';
+  el.title = `${trackId} transpose: drag for ±12 semitones, double-click to reset`;
   const val = document.createElement('span');
   val.className = 'tempo-label mono octave-val';
   function fmt(n){ return (n > 0 ? '+' : '') + n; }
@@ -850,7 +851,6 @@ function makeOctavePill(trackId){
     val.textContent = fmt(v);
   }
   setVal(trackTranspose[trackId] || 0);
-  el.appendChild(lab);
   el.appendChild(val);
   let dragging = false, startY = 0, startVal = 0;
   el.addEventListener('pointerdown', (e)=>{
@@ -1378,6 +1378,7 @@ function stopSequencer(){
 
 function setPlayingState(isPlaying){
   running = isPlaying;
+  setPlayFadeOverride(isPlaying);
   if(running){
     toggleBtn.textContent = '◼';
     toggleBtn.title = 'Stop';
