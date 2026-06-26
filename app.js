@@ -218,6 +218,10 @@ let swingPct = 50;
 let adsrScale = 0;
 const ENV_MAX_MULT = 5;
 function envMult(){ return 1 + (adsrScale / 100) * (ENV_MAX_MULT - 1); }
+// Synths get a wider ceiling than drums — at adsr=100 the acid/FM release
+// stretches 10× instead of 5×, so notes can sustain past the next step.
+const SYNTH_ENV_MAX_MULT = 10;
+function synthEnvMult(){ return 1 + (adsrScale / 100) * (SYNTH_ENV_MAX_MULT - 1); }
 let delayNodeRef = null;
 let delayFbRef = null;          // delay feedback gain — mutated by the delay FX popup
 let delayDampRef = null;        // delay tone (lowpass) filter — mutated by the delay FX popup
@@ -1152,7 +1156,7 @@ function playAcid(ctx, t, stepIndex, dest){
 
   const q = (accented ? 11 : 6) + wReso * 7;
   const peakGain = accented ? 0.34 : 0.22;
-  const noteLen = STEP_SECONDS * (1.3 + wDecay * 1.1);
+  const noteLen = STEP_SECONDS * (1.3 + wDecay * 1.1) * synthEnvMult();
   const noteTrack = (freq / midiToFreq(36)) * 400;
   const cutoffPeak = (accented ? 2800 : 1500) + noteTrack + wCutoff * 1100;
   const cutoffFloor = 160 + wCutoff * 90;
@@ -1176,7 +1180,7 @@ function playAcid(ctx, t, stepIndex, dest){
   filter.connect(gain);
   gain.connect(dest);
   osc.start(t);
-  osc.stop(t + STEP_SECONDS * 2.5);
+  osc.stop(t + noteLen + 0.05);
 }
 
 function playFM(ctx, t, stepIndex, dest){
@@ -1185,7 +1189,7 @@ function playFM(ctx, t, stepIndex, dest){
   const ratio = FM_RATIO[stepIndex];
   const index = FM_INDEX[stepIndex];
   const accented = !!ACID_ACCENT[stepIndex];
-  const noteLen = STEP_SECONDS * 1.4;
+  const noteLen = STEP_SECONDS * 1.4 * synthEnvMult();
 
   const carrier = ctx.createOscillator();
   carrier.type = 'sine';
@@ -1210,8 +1214,8 @@ function playFM(ctx, t, stepIndex, dest){
   carrier.connect(ampEnv);
   ampEnv.connect(dest);
 
-  carrier.start(t); carrier.stop(t + STEP_SECONDS * 2);
-  mod.start(t); mod.stop(t + STEP_SECONDS * 2);
+  carrier.start(t); carrier.stop(t + noteLen + 0.05);
+  mod.start(t); mod.stop(t + noteLen + 0.05);
 }
 
 const VOICES = { kick: playKick, snare: playSnare, hat: playHat };
