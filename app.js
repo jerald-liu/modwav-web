@@ -883,7 +883,10 @@ const statusDot = document.getElementById('statusDot');
 const modalDot = document.getElementById('modalDot');
 const statusText = document.getElementById('statusText');
 const bpmAmtEl = document.getElementById('bpmAmt');
-const tempoCtrlEl = document.querySelector('.tempo-ctrl');
+// Anchor on the BPM input — querySelector('.tempo-ctrl') would return the
+// first match, which is now a track octave pill (also a .tempo-ctrl) since
+// the track rows build before the bottom ctrl-row. closest() gets the right pill.
+const tempoCtrlEl = bpmAmtEl.closest('.tempo-ctrl');
 
 function setTempo(bpm){
   bpm = Math.max(60, Math.min(180, Math.round(bpm)));
