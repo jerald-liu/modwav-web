@@ -361,46 +361,23 @@
     margin-bottom: 1.2rem;
   }
 
-  /* fixed background waveform — top third of viewport, behind content */
+  /* circuit-bg: simplified — just scale the SVG to fit the page. No bleed,
+     no mask fade, no mobile-specific rules. SVG's preserveAspectRatio="meet"
+     does the work. Kept: opacity, trace color, pointer-events, blur (aesthetic). */
   body{ position: relative; overflow-x: hidden; }
   .circuit-bg{
     position: absolute;
-    /* start just below the waveform band (#bgScope spans 3vh–12vh) so the wave
-       owns the top of the page; the SVG (meet) shows the whole diagram scaled
-       to fit, and the mask fades it out at top + bottom so it never hard-cuts
-       against the waveform above or the footer separator below. */
-    top: 13vh;
-    /* desktop: box left edge at page center; the SVG inside is sized larger
-       than the box (.circuit-svg width), so the diagram scales up and its right
-       side bleeds off — clipped by this box's overflow, so no page scroll.
-       Taller-than-box height is clipped + faded, centered so both ends cut. */
-    right: 0;
-    bottom: 0;
-    left: auto;
-    width: 50%;
-    display: flex;
-    align-items: center;
+    inset: 0;
     z-index: 0;
     pointer-events: none;
-    overflow: hidden;
     opacity: 0.6;
     --trace: #6e2e2e;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%);
   }
   .circuit-svg{
     display: block;
-    /* >100% scales the diagram up past the box's right edge (bleeds off, clipped
-       by .circuit-bg). flex-shrink:0 keeps the width from collapsing to fit. */
-    width: 112%;
-    height: auto;
-    flex-shrink: 0;
+    width: 100%;
+    height: 100%;
     filter: blur(0.3px);
-  }
-  @media (max-width: 720px){
-    /* mobile: full diagram fit (meet) behind the text, faded top/bottom */
-    .circuit-bg{ width: 92%; right: 0; display: block; }
-    .circuit-svg{ width: 100%; height: 100%; }
   }
   #bgScope{
     position: fixed;
