@@ -29,10 +29,15 @@ synthOverlay.addEventListener('click', (e)=>{
 // Fade the fixed top banner out as the page scrolls, so it never sits over
 // content scrolling up beneath it.
 const navEl = document.querySelector('.nav');
+const bgScopeEl = document.getElementById('bgScope');
 const NAV_FADE_PX = 90; // fully faded before content scrolls up into the banner
+// Waveform is hidden while the nav is fully visible (top of page) so the nav
+// band reads clean, then cross-fades in as the nav fades out.
+const SCOPE_BASE_OPACITY = 0.55; // matches the original #bgScope opacity
 function updateNavFade(){
-  const o = Math.max(0, 1 - window.scrollY / NAV_FADE_PX);
-  navEl.style.opacity = o.toFixed(3);
+  const navO = Math.max(0, 1 - window.scrollY / NAV_FADE_PX);
+  navEl.style.opacity = navO.toFixed(3);
+  if(bgScopeEl) bgScopeEl.style.opacity = (SCOPE_BASE_OPACITY * (1 - navO)).toFixed(3);
 }
 window.addEventListener('scroll', updateNavFade, { passive: true });
 updateNavFade();
