@@ -1022,15 +1022,19 @@ function ensureAudio(){
 
 function playKick(ctx, t, dest){
   const m = envMult();
+  // The kick's "transient" — pitch-up sweep (0.001) + amp attack (0.002) + the
+  // click osc + click envelope — must NOT scale with ADSR. At m=5 a scaled
+  // click stretches a 1800Hz square out to 30ms, which reads as a staccato
+  // high-pitched chirp instead of a kick attack. Only the body/release stretches.
   const osc = ctx.createOscillator();
   osc.type = 'triangle';
   osc.frequency.setValueAtTime(38.7, t);
-  osc.frequency.exponentialRampToValueAtTime(106.8, t + 0.001 * m);
+  osc.frequency.exponentialRampToValueAtTime(106.8, t + 0.001);
   osc.frequency.exponentialRampToValueAtTime(32, t + 0.14 * m);
 
   const ampEnv = ctx.createGain();
   ampEnv.gain.setValueAtTime(0.0001, t);
-  ampEnv.gain.exponentialRampToValueAtTime(1.0, t + 0.002 * m);
+  ampEnv.gain.exponentialRampToValueAtTime(0.708, t + 0.002);     // peak -3 dB (was 1.0)
   ampEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.55 * m);
 
   const shaper = ctx.createWaveShaper();
@@ -1042,8 +1046,8 @@ function playKick(ctx, t, dest){
   click.type = 'square';
   click.frequency.value = 1800;
   const clickEnv = ctx.createGain();
-  clickEnv.gain.setValueAtTime(0.18, t);
-  clickEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.006 * m);
+  clickEnv.gain.setValueAtTime(0.127, t);                           // -3 dB (was 0.18); transient
+  clickEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.006);    // transient — not scaled
 
   osc.connect(shaper);
   shaper.connect(ampEnv);
@@ -1052,7 +1056,7 @@ function playKick(ctx, t, dest){
   clickEnv.connect(dest);
 
   osc.start(t); osc.stop(t + 0.58 * m);
-  click.start(t); click.stop(t + 0.01 * m);
+  click.start(t); click.stop(t + 0.01);                              // transient — not scaled
 }
 
 function playSnare(ctx, t, dest){
@@ -1065,7 +1069,7 @@ function playSnare(ctx, t, dest){
   osc2.frequency.value = 264;
 
   const bodyEnv = ctx.createGain();
-  bodyEnv.gain.setValueAtTime(0.45, t);
+  bodyEnv.gain.setValueAtTime(0.225, t);                            // -6 dB (was 0.45)
   bodyEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.13 * m);
 
   osc1.connect(bodyEnv);
@@ -1091,7 +1095,7 @@ function playSnare(ctx, t, dest){
   bandpass.Q.value = 0.7;
 
   const noiseEnv = ctx.createGain();
-  noiseEnv.gain.setValueAtTime(0.55, t);
+  noiseEnv.gain.setValueAtTime(0.275, t);                           // -6 dB (was 0.55)
   noiseEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.16 * m);
 
   noise.connect(highpass);
@@ -1113,7 +1117,7 @@ function playHat(ctx, t, dest){
   highpass.frequency.value = 6800;
 
   const env = ctx.createGain();
-  env.gain.setValueAtTime(0.28, t);
+  env.gain.setValueAtTime(0.198, t);                                // -3 dB (was 0.28)
   env.gain.exponentialRampToValueAtTime(0.0001, t + 0.05 * m);
 
   ratios.forEach(r=>{
