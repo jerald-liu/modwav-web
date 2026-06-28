@@ -1350,8 +1350,12 @@ function schedulerLoop(){
     // pending length change — guarantees the audible bar plays out fully and
     // the final modulo lands us on a step that exists in the new sequence.
     currentStep = currentStep + 1;
-    if(pendingLengthChange && currentStep % STEPS === 0){
-      applyPendingLengthChange();
+    if(currentStep % STEPS === 0){
+      if(pendingLengthChange) applyPendingLengthChange();
+      // Evolve runs once per audible bar boundary, just before the modulo
+      // wrap, so mutations land on the next bar's playback in the same tick
+      // as any pending length change.
+      if(evolving) evolveOnce();
     }
     currentStep = currentStep % totalSteps();
   }
@@ -2014,7 +2018,121 @@ function runRandomize(){
   saveStateSoon();
 }
 
+/* ---------------- evolve mode ---------------- */
+// Hairline mutations applied at every bar boundary while playing. Each tick
+// picks 1–3 mutations (weighted toward 1), each scoped to a single track and
+// a single parameter. Excludes globals (BPM/swing/ADSR/FX-bus/master) per spec.
+// Bias is toward rhythmic (step toggles) over melodic/timbral.
+// Mode is transient: not persisted, resets to off on reload.
+let evolving = false;
+let evolveBtnEl = null; // set when the button is wired below
+
+// Weighted pick: stepToggle 70 / acidPitch 15 / fmTweak 10 / sendNudge 5.
+// Returns one of: 'step' | 'pitch' | 'fm' | 'send'.
+function pickEvolveOp(){
+  const r = Math.random() * 100;
+  if(r < 70) return 'step';
+  if(r < 85) return 'pitch';
+  if(r < 95) return 'fm';
+  return 'send';
+}
+// 1: 60%, 2: 30%, 3: 10%.
+function pickEvolveCount(){
+  const r = Math.random();
+  if(r < 0.6) return 1;
+  if(r < 0.9) return 2;
+  return 3;
+}
+
+function evolveStepToggle(){
+  // Density-aware flip — biases away from all-on / all-off attractors so a
+  // long evolve session doesn't drift into noise or silence.
+  const track = _rp(['kick','snare','hat','acid']);
+  const arr = pattern[track];
+  const n = arr.length;
+  const density = arr.reduce((a,v)=>a+v,0) / n;
+  const flipOnP = density < 0.2 ? 0.85 : density > 0.7 ? 0.15 : 0.5;
+  const want = _rd(flipOnP); // 1 = want to turn one on, 0 = turn one off
+  const candidates = [];
+  for(let i = 0; i < n; i++) if((arr[i] ? 0 : 1) === want) candidates.push(i);
+  if(!candidates.length) return false;
+  const i = _rp(candidates);
+  arr[i] = want;
+  return true;
+}
+function evolveAcidPitch(){
+  // Only re-pitches active acid steps (silent ones are inaudible — no point).
+  const active = [];
+  for(let i = 0; i < pattern.acid.length; i++) if(pattern.acid[i]) active.push(i);
+  if(!active.length) return false;
+  const i = _rp(active);
+  const delta = _rp([-3,-2,-1,1,2,3]);
+  ACID_NOTES[i] = Math.max(ACID_NOTE_MIN, Math.min(ACID_NOTE_MAX, ACID_NOTES[i] + delta));
+  return true;
+}
+function evolveFmTweak(){
+  // Only relevant when the acid voice is FM AND there's an active step to retime.
+  if(acidInstrument !== 'fm') return false;
+  const active = [];
+  for(let i = 0; i < pattern.acid.length; i++) if(pattern.acid[i]) active.push(i);
+  if(!active.length) return false;
+  const i = _rp(active);
+  if(Math.random() < 0.5){
+    // ratio: nudge to a neighboring choice in the discrete list
+    const idx = FM_RATIO_CHOICES.indexOf(FM_RATIO[i]);
+    const ni = Math.max(0, Math.min(FM_RATIO_CHOICES.length - 1, (idx < 0 ? 0 : idx) + _rp([-1,1])));
+    FM_RATIO[i] = FM_RATIO_CHOICES[ni];
+  } else {
+    FM_INDEX[i] = Math.max(0, Math.min(400, FM_INDEX[i] + _ri(-20, 20)));
+  }
+  return true;
+}
+function evolveSendNudge(){
+  const track = _rp(['kick','snare','hat','acid']);
+  const kind = Math.random() < 0.5 ? 'delay' : 'reverb';
+  const cur = trackSendValues[track][kind];
+  const delta = _ri(5, 15) * (Math.random() < 0.5 ? -1 : 1);
+  const v = Math.max(0, Math.min(100, cur + delta));
+  trackSendValues[track][kind] = v;
+  const node = kind === 'delay' ? trackDelaySends[track] : trackReverbSends[track];
+  if(node) node.gain.value = v / 100;
+  trackSendKnobs[track]?.[kind]?.setValue(v);
+  return true;
+}
+
+function evolveOnce(){
+  const n = pickEvolveCount();
+  let changed = false;
+  for(let k = 0; k < n; k++){
+    let op = pickEvolveOp();
+    // If the chosen op can't apply (no active acid steps, wrong instrument,
+    // etc.) fall through to a step toggle — keeps the bar feeling alive.
+    let ok;
+    if(op === 'pitch')      ok = evolveAcidPitch();
+    else if(op === 'fm')    ok = evolveFmTweak();
+    else if(op === 'send')  ok = evolveSendNudge();
+    else                    ok = evolveStepToggle();
+    if(!ok) ok = evolveStepToggle();
+    changed = changed || ok;
+  }
+  if(changed){
+    renderPage();
+    renderMiniGrid(miniGridBar);
+    saveStateSoon();
+  }
+}
+
+function setEvolving(on){
+  evolving = on;
+  if(evolveBtnEl){
+    evolveBtnEl.classList.toggle('evolving', on);
+    evolveBtnEl.setAttribute('aria-pressed', String(on));
+  }
+}
+
 /* ---- randomize popup (tree of checkboxes) ---- */
+evolveBtnEl = document.getElementById('evolveBtn');
+evolveBtnEl.addEventListener('click', () => setEvolving(!evolving));
 const rndBtn = document.getElementById('rndBtn');
 const rndPopup = document.getElementById('rndPopup');
 const rndTreeEl = document.getElementById('rndTree');

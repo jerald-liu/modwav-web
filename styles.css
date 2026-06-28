@@ -507,6 +507,9 @@
   }
   .rnd-btn:focus{ outline: none; }
   .rnd-btn svg{ display: block; }
+  /* Evolve toggle — borrows the .rnd-btn shell; phosphor ring when armed so it
+     reads as an ongoing mode rather than a one-shot. */
+  .rnd-btn.evolving{ color: var(--phosphor); border-color: var(--phosphor); }
 
   /* randomize popup: same .fm-popup shell, extended for the checkbox tree */
   .rnd-popup{ width: 260px; }
