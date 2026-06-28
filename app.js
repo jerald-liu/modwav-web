@@ -326,10 +326,18 @@ function saveStateNow(){
   try {
     localStorage.setItem(STATE_KEY, JSON.stringify({
       v: 1,
-      pattern, acidNotes: ACID_NOTES, acidAccent: ACID_ACCENT,
-      fmRatio: FM_RATIO, fmIndex: FM_INDEX,
+      // While evolving, persist the FROZEN user pattern, not the live mutating
+      // buffer. Reload restores what the user authored, not a midstream evolve
+      // snapshot. Everything outside that snapshot (numBars, tempo, fx, etc.)
+      // is still saved from live state — evolve doesn't touch them.
+      pattern:   evolving && preEvolveSnapshot ? { kick: preEvolveSnapshot.kick, snare: preEvolveSnapshot.snare, hat: preEvolveSnapshot.hat, acid: preEvolveSnapshot.acid } : pattern,
+      acidNotes: evolving && preEvolveSnapshot ? preEvolveSnapshot.acidNotes : ACID_NOTES,
+      acidAccent: ACID_ACCENT,
+      fmRatio:   evolving && preEvolveSnapshot ? preEvolveSnapshot.fmRatio : FM_RATIO,
+      fmIndex:   evolving && preEvolveSnapshot ? preEvolveSnapshot.fmIndex : FM_INDEX,
       numBars, currentBar, tempo: TEMPO_BPM, swing: swingPct, adsr: adsrScale, acidInstrument,
-      trackSends: trackSendValues, trackMute, trackSolo, trackTranspose,
+      trackSends: evolving && preEvolveSnapshot ? preEvolveSnapshot.sends : trackSendValues,
+      trackMute, trackSolo, trackTranspose,
       fx: {
         delayBus: delayBusValue, reverbBus: reverbBusValue,
         delayFb: delayFbValue, delayDiv: delayDivIndex, delayTone,
@@ -2026,6 +2034,47 @@ function runRandomize(){
 // Mode is transient: not persisted, resets to off on reload.
 let evolving = false;
 let evolveBtnEl = null; // set when the button is wired below
+// Frozen copy of the user's authored pattern, taken when evolve arms. While
+// evolving, the live arrays are the mutating buffer; this snapshot is what
+// gets persisted (so reload doesn't clobber the user's work) and what gets
+// restored on disarm. Null when not evolving.
+let preEvolveSnapshot = null;
+
+function snapshotPatternState(){
+  const sends = {};
+  Object.keys(trackSendValues).forEach(id => { sends[id] = { ...trackSendValues[id] }; });
+  return {
+    kick: [...pattern.kick], snare: [...pattern.snare],
+    hat:  [...pattern.hat],  acid:  [...pattern.acid],
+    acidNotes: [...ACID_NOTES],
+    fmRatio:   [...FM_RATIO],
+    fmIndex:   [...FM_INDEX],
+    sends,
+  };
+}
+function restorePatternState(snap){
+  // Copy in place so every closure that captured these arrays keeps working —
+  // same idiom loadState() uses.
+  const replace = (target, src) => { target.length = 0; target.push(...src); };
+  replace(pattern.kick,  snap.kick);
+  replace(pattern.snare, snap.snare);
+  replace(pattern.hat,   snap.hat);
+  replace(pattern.acid,  snap.acid);
+  replace(ACID_NOTES,    snap.acidNotes);
+  replace(FM_RATIO,      snap.fmRatio);
+  replace(FM_INDEX,      snap.fmIndex);
+  // Sends need to also push back to the audio nodes + knob UI so live playback
+  // and the visible knob angles match the restored values.
+  Object.keys(snap.sends).forEach(id => {
+    ['delay','reverb'].forEach(kind => {
+      const v = snap.sends[id][kind];
+      trackSendValues[id][kind] = v;
+      const node = kind === 'delay' ? trackDelaySends[id] : trackReverbSends[id];
+      if(node) node.gain.value = v / 100;
+      trackSendKnobs[id]?.[kind]?.setValue(v);
+    });
+  });
+}
 
 // Weighted pick: stepToggle 70 / acidPitch 15 / fmTweak 10 / sendNudge 5.
 // Returns one of: 'step' | 'pitch' | 'fm' | 'send'.
@@ -2123,10 +2172,24 @@ function evolveOnce(){
 }
 
 function setEvolving(on){
-  evolving = on;
+  if(on === evolving) return;
+  if(on){
+    // Freeze the user's authored pattern before any mutation runs.
+    preEvolveSnapshot = snapshotPatternState();
+    evolving = true;
+  } else {
+    evolving = false;
+    if(preEvolveSnapshot){
+      restorePatternState(preEvolveSnapshot);
+      preEvolveSnapshot = null;
+      renderPage();
+      renderMiniGrid(miniGridBar);
+      saveStateSoon();
+    }
+  }
   if(evolveBtnEl){
-    evolveBtnEl.classList.toggle('evolving', on);
-    evolveBtnEl.setAttribute('aria-pressed', String(on));
+    evolveBtnEl.classList.toggle('evolving', evolving);
+    evolveBtnEl.setAttribute('aria-pressed', String(evolving));
   }
 }
 
