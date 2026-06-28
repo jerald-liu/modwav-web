@@ -2195,7 +2195,9 @@ function setEvolving(on){
 
 /* ---- randomize popup (tree of checkboxes) ---- */
 evolveBtnEl = document.getElementById('evolveBtn');
-evolveBtnEl.addEventListener('click', () => setEvolving(!evolving));
+// Null-safe: a stale HTML cache without the evolveBtn shouldn't take the whole
+// app down. The mode is still callable via setEvolving() in devtools.
+if(evolveBtnEl) evolveBtnEl.addEventListener('click', () => setEvolving(!evolving));
 const rndBtn = document.getElementById('rndBtn');
 const rndPopup = document.getElementById('rndPopup');
 const rndTreeEl = document.getElementById('rndTree');
