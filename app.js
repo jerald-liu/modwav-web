@@ -46,29 +46,77 @@ function setPlayFadeOverride(on){ playFadeOverride = on; updateNavFade(); }
 window.addEventListener('scroll', updateNavFade, { passive: true });
 updateNavFade();
 
-/* ---------------- FM per-step popup ---------------- */
-const fmPopup = document.getElementById('fmPopup');
-const fmPopupStep = document.getElementById('fmPopupStep');
-const fmPopupClose = document.getElementById('fmPopupClose');
+/* ---------------- per-step popup (right-click any active step) ---------------- */
+// Unified step-edit popup. Rows shown/hidden based on track + acid instrument:
+//   all tracks : VEL, TIME
+//   hat        : + DECAY
+//   acid       : + ACCENT
+//   acid + FM  : + RATIO, INDEX
+// Reads/writes STEP_VELOCITY, STEP_TIMING, HAT_DECAY, ACID_ACCENT, FM_RATIO,
+// FM_INDEX. Anchored above the clicked step via positionPopupAbove().
+const stepPopup = document.getElementById('stepPopup');
+const stepPopupTitle = document.getElementById('stepPopupTitle');
+const stepPopupClose = document.getElementById('stepPopupClose');
+const stepVelInput = document.getElementById('stepVelInput');
+const stepVelVal = document.getElementById('stepVelVal');
+const stepTimingInput = document.getElementById('stepTimingInput');
+const stepTimingVal = document.getElementById('stepTimingVal');
+const hatDecayInput = document.getElementById('hatDecayInput');
+const hatDecayVal = document.getElementById('hatDecayVal');
+const acidAccentInput = document.getElementById('acidAccentInput');
+const acidAccentVal = document.getElementById('acidAccentVal');
 const fmRatioInput = document.getElementById('fmRatioInput');
 const fmIndexInput = document.getElementById('fmIndexInput');
 const fmRatioVal = document.getElementById('fmRatioVal');
 const fmIndexVal = document.getElementById('fmIndexVal');
-let fmPopupStepIdx = -1;
+let stepPopupTrack = null;   // 'kick' | 'snare' | 'hat' | 'acid'
+let stepPopupStepIdx = -1;
 
-function openFMPopup(stepIdx, anchorEl){
-  if(acidInstrument !== 'fm') return;
-  fmPopupStepIdx = stepIdx;
+function stepPopupRow(name){ return stepPopup.querySelector(`[data-row="${name}"]`); }
+
+function openStepPopup(track, stepIdx, anchorEl){
+  // Only open on active steps — right-clicking an OFF step is a no-op so users
+  // don't accidentally shape a silent slot.
+  if(!pattern[track][stepIdx]) return;
+  stepPopupTrack = track;
+  stepPopupStepIdx = stepIdx;
   const bar = Math.floor(stepIdx / STEPS) + 1;
   const stepInBar = (stepIdx % STEPS) + 1;
-  fmPopupStep.textContent = `bar ${bar} · step ${stepInBar}`;
-  fmRatioInput.value = FM_RATIO[stepIdx];
-  fmIndexInput.value = FM_INDEX[stepIdx];
-  fmRatioVal.textContent = (+FM_RATIO[stepIdx]).toFixed(2);
-  fmIndexVal.textContent = FM_INDEX[stepIdx];
-  fmPopup.hidden = false;
-  positionPopupAbove(fmPopup, anchorEl);
+  stepPopupTitle.textContent = `bar ${bar} · step ${stepInBar} · ${track.toUpperCase()}`;
+  // Universal rows
+  const vel = STEP_VELOCITY[track][stepIdx] ?? 100;
+  stepVelInput.value = vel; stepVelVal.textContent = vel;
+  const timing = STEP_TIMING[track][stepIdx] ?? 0;
+  stepTimingInput.value = timing; stepTimingVal.textContent = timing > 0 ? '+' + timing : timing;
+  // Track-specific
+  const decayRow = stepPopupRow('decay');
+  const accentRow = stepPopupRow('accent');
+  const fmRatioRow = stepPopupRow('fmRatio');
+  const fmIndexRow = stepPopupRow('fmIndex');
+  decayRow.hidden = track !== 'hat';
+  if(track === 'hat'){
+    const d = HAT_DECAY[stepIdx] ?? 50;
+    hatDecayInput.value = d; hatDecayVal.textContent = d;
+  }
+  accentRow.hidden = track !== 'acid';
+  if(track === 'acid'){
+    const a = ACID_ACCENT[stepIdx] ? 1 : 0;
+    acidAccentInput.value = a; acidAccentVal.textContent = a ? 'on' : 'off';
+  }
+  const showFM = track === 'acid' && acidInstrument === 'fm';
+  fmRatioRow.hidden = !showFM;
+  fmIndexRow.hidden = !showFM;
+  if(showFM){
+    fmRatioInput.value = FM_RATIO[stepIdx];
+    fmIndexInput.value = FM_INDEX[stepIdx];
+    fmRatioVal.textContent = (+FM_RATIO[stepIdx]).toFixed(2);
+    fmIndexVal.textContent = FM_INDEX[stepIdx];
+  }
+  stepPopup.hidden = false;
+  positionPopupAbove(stepPopup, anchorEl);
 }
+// Legacy name — a few call sites still use openFMPopup. Route to the unified popup.
+function openFMPopup(stepIdx, anchorEl){ openStepPopup('acid', stepIdx, anchorEl); }
 
 // position `popup` above `anchorEl`, centred horizontally, relative to the
 // .synth-modal that contains them; falls back below if there's no room above.
@@ -92,31 +140,68 @@ function positionPopupAbove(popup, anchorEl){
   popup.style.left = left + 'px';
   popup.style.top = top + 'px';
 }
-function closeFMPopup(){
-  fmPopup.hidden = true;
-  fmPopupStepIdx = -1;
+function closeStepPopup(){
+  stepPopup.hidden = true;
+  stepPopupTrack = null;
+  stepPopupStepIdx = -1;
 }
-fmPopupClose.addEventListener('click', closeFMPopup);
+// Legacy alias — a few call sites elsewhere still call closeFMPopup.
+function closeFMPopup(){ closeStepPopup(); }
+stepPopupClose.addEventListener('click', closeStepPopup);
+
+// Each input mutates its target state and calls saveStateSoon. Guard on
+// stepPopupStepIdx so no writes happen when popup is closed / uninitialized.
+stepVelInput.addEventListener('input', ()=>{
+  if(stepPopupStepIdx < 0 || !stepPopupTrack) return;
+  const v = +stepVelInput.value;
+  STEP_VELOCITY[stepPopupTrack][stepPopupStepIdx] = v;
+  stepVelVal.textContent = v;
+  saveStateSoon();
+});
+stepTimingInput.addEventListener('input', ()=>{
+  if(stepPopupStepIdx < 0 || !stepPopupTrack) return;
+  const v = +stepTimingInput.value;
+  STEP_TIMING[stepPopupTrack][stepPopupStepIdx] = v;
+  stepTimingVal.textContent = v > 0 ? '+' + v : v;
+  saveStateSoon();
+});
+hatDecayInput.addEventListener('input', ()=>{
+  if(stepPopupStepIdx < 0 || stepPopupTrack !== 'hat') return;
+  const v = +hatDecayInput.value;
+  HAT_DECAY[stepPopupStepIdx] = v;
+  hatDecayVal.textContent = v;
+  saveStateSoon();
+});
+acidAccentInput.addEventListener('input', ()=>{
+  if(stepPopupStepIdx < 0 || stepPopupTrack !== 'acid') return;
+  const v = +acidAccentInput.value;
+  ACID_ACCENT[stepPopupStepIdx] = v;
+  acidAccentVal.textContent = v ? 'on' : 'off';
+  saveStateSoon();
+});
 fmRatioInput.addEventListener('input', ()=>{
-  if(fmPopupStepIdx < 0) return;
+  if(stepPopupStepIdx < 0 || stepPopupTrack !== 'acid') return;
   const v = +fmRatioInput.value;
-  FM_RATIO[fmPopupStepIdx] = v;
+  FM_RATIO[stepPopupStepIdx] = v;
   fmRatioVal.textContent = v.toFixed(2);
   saveStateSoon();
 });
 fmIndexInput.addEventListener('input', ()=>{
-  if(fmPopupStepIdx < 0) return;
+  if(stepPopupStepIdx < 0 || stepPopupTrack !== 'acid') return;
   const v = +fmIndexInput.value;
-  FM_INDEX[fmPopupStepIdx] = v;
+  FM_INDEX[stepPopupStepIdx] = v;
   fmIndexVal.textContent = v;
   saveStateSoon();
 });
-// click outside the popup closes it
+// click outside the popup closes it. Steps themselves are the anchors — don't
+// treat clicks on any .step as "outside" (the same step's contextmenu re-opens
+// the popup on the same target, and clicks on adjacent steps should re-target
+// the popup rather than dismiss it).
 document.addEventListener('pointerdown', (e)=>{
-  if(fmPopup.hidden) return;
-  if(fmPopup.contains(e.target)) return;
-  if(e.target.classList && e.target.classList.contains('step-pitch')) return;
-  closeFMPopup();
+  if(stepPopup.hidden) return;
+  if(stepPopup.contains(e.target)) return;
+  if(e.target.closest && e.target.closest('#seq .step')) return;
+  closeStepPopup();
 }, true);
 document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape') closeModal();
@@ -284,6 +369,23 @@ let acidInstrument = 'acid'; // 'acid' | 'fm'
 const FM_RATIO = new Array(STEPS).fill(2);    // modulator : carrier
 const FM_INDEX = new Array(STEPS).fill(120);  // modulation index (0–400)
 
+// Per-step voice parameters — right-click a step to edit. All arrays grow with
+// numBars via PLOCK_ARRAYS (same as pattern[]/ACID_NOTES/etc.). Defaults chosen
+// so an unedited pattern sounds identical to before these were added.
+const STEP_VELOCITY = {                        // 0–100 peak-amplitude multiplier
+  kick:  new Array(STEPS).fill(100),
+  snare: new Array(STEPS).fill(100),
+  hat:   new Array(STEPS).fill(100),
+  acid:  new Array(STEPS).fill(100),
+};
+const STEP_TIMING = {                          // -50..+50 (percent of STEP_SECONDS)
+  kick:  new Array(STEPS).fill(0),
+  snare: new Array(STEPS).fill(0),
+  hat:   new Array(STEPS).fill(0),
+  acid:  new Array(STEPS).fill(0),
+};
+const HAT_DECAY = new Array(STEPS).fill(50);   // 0=closed/short, 100=open/long, 50=default 1x
+
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 function noteName(m){ return NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1); }
 
@@ -338,6 +440,7 @@ function saveStateNow(){
       numBars, currentBar, tempo: TEMPO_BPM, swing: swingPct, adsr: adsrScale, acidInstrument,
       trackSends: evolving && preEvolveSnapshot ? preEvolveSnapshot.sends : trackSendValues,
       trackMute, trackSolo, trackTranspose,
+      stepVelocity: STEP_VELOCITY, stepTiming: STEP_TIMING, hatDecay: HAT_DECAY,
       fx: {
         delayBus: delayBusValue, reverbBus: reverbBusValue,
         delayFb: delayFbValue, delayDiv: delayDivIndex, delayTone,
@@ -395,6 +498,9 @@ addEventListener('visibilitychange', () => {
     const v = s.trackTranspose[id];
     if(typeof v === 'number') trackTranspose[id] = Math.max(-12, Math.min(12, Math.round(v)));
   });
+  if(s.stepVelocity) Object.keys(STEP_VELOCITY).forEach(id => replaceArr(STEP_VELOCITY[id], s.stepVelocity[id]));
+  if(s.stepTiming)   Object.keys(STEP_TIMING).forEach(id => replaceArr(STEP_TIMING[id], s.stepTiming[id]));
+  replaceArr(HAT_DECAY, s.hatDecay);
   if(s.fx){
     const fx = s.fx;
     if(typeof fx.delayBus === 'number')   delayBusValue  = fx.delayBus;
@@ -582,10 +688,23 @@ TRACKS.forEach((track, ti)=>{
       });
       btn.addEventListener('contextmenu', (e)=>{
         e.preventDefault();
-        openFMPopup(absStep(s), btn);
+        openStepPopup('acid', absStep(s), btn);
       });
     } else {
       btn.addEventListener('click', toggleStep);
+      // Right-click / long-press opens the per-step params popup (no-op on off steps).
+      btn.addEventListener('contextmenu', (e)=>{
+        e.preventDefault();
+        openStepPopup(track.id, absStep(s), btn);
+      });
+      let lpTimer = null;
+      btn.addEventListener('pointerdown', (e)=>{
+        if(e.pointerType === 'touch') lpTimer = setTimeout(() => { openStepPopup(track.id, absStep(s), btn); lpTimer = null; }, 450);
+      });
+      const clearLP = () => { if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; } };
+      btn.addEventListener('pointerup', clearLP);
+      btn.addEventListener('pointercancel', clearLP);
+      btn.addEventListener('pointermove', clearLP);
     }
     row.appendChild(btn);
   }
@@ -669,7 +788,13 @@ TRACKS.forEach((track, ti)=>{
 // The five per-step arrays grow/shrink to STEPS * numBars. The visual grid is
 // always 16 steps showing currentBar; the mini-grid shows whichever bar is
 // playing (during playback) or being edited (when stopped).
-const PLOCK_ARRAYS = () => [pattern.kick, pattern.snare, pattern.hat, pattern.acid, ACID_NOTES, ACID_ACCENT, FM_RATIO, FM_INDEX];
+const PLOCK_ARRAYS = () => [
+  pattern.kick, pattern.snare, pattern.hat, pattern.acid,
+  ACID_NOTES, ACID_ACCENT, FM_RATIO, FM_INDEX,
+  STEP_VELOCITY.kick, STEP_VELOCITY.snare, STEP_VELOCITY.hat, STEP_VELOCITY.acid,
+  STEP_TIMING.kick,   STEP_TIMING.snare,   STEP_TIMING.hat,   STEP_TIMING.acid,
+  HAT_DECAY,
+];
 let miniGridBar = 0;   // which bar the bottom mini-grid currently displays
 let playingBar = -1;   // bar the scheduler is currently on (-1 when stopped)
 // While the scheduler is running, ÷2/×2 queue here and the scheduler applies
@@ -1121,8 +1246,9 @@ function ensureAudio(){
   droneNodes = [drone, droneGain];
 }
 
-function playKick(ctx, t, dest){
+function playKick(ctx, t, stepIndex, dest){
   const m = envMult();
+  const vel = (STEP_VELOCITY.kick[stepIndex] ?? 100) / 100;
   // The kick's "transient" — pitch-up sweep (0.001) + amp attack (0.002) + the
   // click osc + click envelope — must NOT scale with ADSR. At m=5 a scaled
   // click stretches a 1800Hz square out to 30ms, which reads as a staccato
@@ -1136,7 +1262,7 @@ function playKick(ctx, t, dest){
 
   const ampEnv = ctx.createGain();
   ampEnv.gain.setValueAtTime(0.0001, t);
-  ampEnv.gain.exponentialRampToValueAtTime(0.708, t + 0.002);     // peak -3 dB (was 1.0)
+  ampEnv.gain.exponentialRampToValueAtTime(0.708 * vel, t + 0.002); // peak -3 dB × step velocity
   ampEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.55 * m);
 
   const shaper = ctx.createWaveShaper();
@@ -1148,7 +1274,7 @@ function playKick(ctx, t, dest){
   click.type = 'square';
   click.frequency.value = 1800;
   const clickEnv = ctx.createGain();
-  clickEnv.gain.setValueAtTime(0.127, t);                           // -3 dB (was 0.18); transient
+  clickEnv.gain.setValueAtTime(0.127 * vel, t);                     // -3 dB × velocity (transient, unscaled by ADSR)
   clickEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.006);    // transient — not scaled
 
   osc.connect(shaper);
@@ -1161,9 +1287,10 @@ function playKick(ctx, t, dest){
   click.start(t); click.stop(t + 0.01);                              // transient — not scaled
 }
 
-function playSnare(ctx, t, dest){
+function playSnare(ctx, t, stepIndex, dest){
   const m = envMult();
   const p = trackPitchMult('snare');
+  const vel = (STEP_VELOCITY.snare[stepIndex] ?? 100) / 100;
   const osc1 = ctx.createOscillator();
   osc1.type = 'triangle';
   osc1.frequency.value = 190 * p;
@@ -1172,7 +1299,7 @@ function playSnare(ctx, t, dest){
   osc2.frequency.value = 264 * p;
 
   const bodyEnv = ctx.createGain();
-  bodyEnv.gain.setValueAtTime(0.225, t);                            // -6 dB (was 0.45)
+  bodyEnv.gain.setValueAtTime(0.225 * vel, t);                      // -6 dB × velocity
   bodyEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.13 * m);
 
   osc1.connect(bodyEnv);
@@ -1198,7 +1325,7 @@ function playSnare(ctx, t, dest){
   bandpass.Q.value = 0.7;
 
   const noiseEnv = ctx.createGain();
-  noiseEnv.gain.setValueAtTime(0.275, t);                           // -6 dB (was 0.55)
+  noiseEnv.gain.setValueAtTime(0.275 * vel, t);                     // -6 dB × velocity
   noiseEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.16 * m);
 
   noise.connect(highpass);
@@ -1209,8 +1336,12 @@ function playSnare(ctx, t, dest){
   noise.stop(t + 0.18 * m);
 }
 
-function playHat(ctx, t, dest){
+function playHat(ctx, t, stepIndex, dest){
   const m = envMult();
+  const vel = (STEP_VELOCITY.hat[stepIndex] ?? 100) / 100;
+  // 0 (closed) → 0.4×, 50 → 1×, 100 (open) → 3× the base decay. Exponential
+  // so the middle of the knob feels neutral, extremes feel dramatic.
+  const decayScale = Math.pow(2, ((HAT_DECAY[stepIndex] ?? 50) - 50) / 33);
   const ratios = [1, 1.342, 1.787, 2.0, 2.245, 2.6];
   const fundamental = 245 * trackPitchMult('hat');
   const hatGain = ctx.createGain();
@@ -1220,8 +1351,8 @@ function playHat(ctx, t, dest){
   highpass.frequency.value = 6800;
 
   const env = ctx.createGain();
-  env.gain.setValueAtTime(0.198, t);                                // -3 dB (was 0.28)
-  env.gain.exponentialRampToValueAtTime(0.0001, t + 0.05 * m);
+  env.gain.setValueAtTime(0.198 * vel, t);                          // -3 dB × velocity
+  env.gain.exponentialRampToValueAtTime(0.0001, t + 0.05 * m * decayScale);
 
   ratios.forEach(r=>{
     const o = ctx.createOscillator();
@@ -1229,7 +1360,7 @@ function playHat(ctx, t, dest){
     o.frequency.value = fundamental * r;
     o.connect(hatGain);
     o.start(t);
-    o.stop(t + 0.06 * m);
+    o.stop(t + 0.06 * m * decayScale);
   });
 
   hatGain.connect(highpass);
@@ -1254,7 +1385,8 @@ function playAcid(ctx, t, stepIndex, dest){
   const wDecay = stepWobble(stepIndex, 3);
 
   const q = (accented ? 11 : 6) + wReso * 7;
-  const peakGain = accented ? 0.34 : 0.22;
+  const vel = (STEP_VELOCITY.acid[stepIndex] ?? 100) / 100;
+  const peakGain = (accented ? 0.34 : 0.22) * vel;
   const noteLen = STEP_SECONDS * (1.3 + wDecay * 1.1) * synthEnvMult();
   const noteTrack = (freq / midiToFreq(36)) * 400;
   const cutoffPeak = (accented ? 2800 : 1500) + noteTrack + wCutoff * 1100;
@@ -1305,7 +1437,8 @@ function playFM(ctx, t, stepIndex, dest){
   modGain.connect(carrier.frequency);
 
   const ampEnv = ctx.createGain();
-  const peakGain = accented ? 0.36 : 0.24;
+  const vel = (STEP_VELOCITY.acid[stepIndex] ?? 100) / 100;
+  const peakGain = (accented ? 0.36 : 0.24) * vel;
   ampEnv.gain.setValueAtTime(0.0001, t);
   ampEnv.gain.exponentialRampToValueAtTime(peakGain, t + 0.006 * envMult());
   ampEnv.gain.exponentialRampToValueAtTime(0.0001, t + noteLen);
@@ -1327,14 +1460,17 @@ const SCHEDULE_AHEAD = 0.12;
 function scheduleStep(stepIndex, time){
   TRACKS.forEach(track=>{
     if(!trackAudible(track.id)) return;
+    if(!pattern[track.id][stepIndex]) return;
     const dest = trackGains[track.id];
+    // Per-step micro-timing: shifts the trigger within the step, in fractions
+    // of STEP_SECONDS. Composes with swing (already baked into `time` upstream).
+    const shift = (STEP_TIMING[track.id][stepIndex] ?? 0) / 100 * STEP_SECONDS;
+    const tShift = Math.max(ctx.currentTime, time + shift);
     if(track.id === 'acid'){
-      if(pattern.acid[stepIndex]){
-        const voice = acidInstrument === 'fm' ? playFM : playAcid;
-        voice(ctx, time, stepIndex, dest);
-      }
-    } else if(pattern[track.id][stepIndex]){
-      VOICES[track.id](ctx, time, dest);
+      const voice = acidInstrument === 'fm' ? playFM : playAcid;
+      voice(ctx, tShift, stepIndex, dest);
+    } else {
+      VOICES[track.id](ctx, tShift, stepIndex, dest);
     }
   });
   highlightPlayhead(stepIndex);
@@ -1658,13 +1794,14 @@ async function renderLoop(trackIds){
   for(let step=0; step<stepCount; step++){
     const t = startPad + step * STEP_SECONDS;
     trackIds.forEach(id=>{
+      if(!pattern[id][step]) return;
+      const shift = (STEP_TIMING[id][step] ?? 0) / 100 * STEP_SECONDS;
+      const ts = Math.max(0, t + shift);
       if(id === 'acid'){
-        if(pattern.acid[step]){
-          const voice = acidInstrument === 'fm' ? playFM : playAcid;
-          voice(octx, t, step, gains.acid);
-        }
-      } else if(pattern[id][step]){
-        VOICES[id](octx, t, gains[id]);
+        const voice = acidInstrument === 'fm' ? playFM : playAcid;
+        voice(octx, ts, step, gains.acid);
+      } else {
+        VOICES[id](octx, ts, step, gains[id]);
       }
     });
   }

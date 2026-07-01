@@ -903,6 +903,9 @@
     line-height: 1;
   }
   .fm-popup-close:hover{ color: var(--ink); }
+  /* [hidden] must beat display:grid for the dynamic step-popup rows to actually
+     hide when we set the attribute from JS. */
+  .fm-popup-row[hidden]{ display: none; }
   .fm-popup-row{
     display: grid;
     grid-template-columns: 50px 1fr 40px;

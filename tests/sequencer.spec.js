@@ -91,25 +91,30 @@ test('right-click never toggles an acid step (ACID + FM modes)', async ({ page }
   expect(await hasOn(acidStep)).toBe(onBefore);
 });
 
-// 4 — FM popup is gated to FM mode and closes on switch back to ACID (bd1d728).
-test('FM popup: hidden in ACID mode, opens in FM mode, closes on switch back', async ({ page }) => {
+// 4 — Step popup: opens on right-click for any active step; FM rows only in FM
+// mode; switching back to ACID hides the FM rows (and closes the popup).
+test('step popup: opens on any active step; FM rows gated to FM mode', async ({ page }) => {
   await open(page);
   const acidStep = page.locator('.step.step-pitch[data-track="acid"][data-step="0"]');
-  const popup = page.locator('#fmPopup');
+  const popup = page.locator('#stepPopup');
+  const fmRatioRow = page.locator('#stepPopup [data-row="fmRatio"]');
+  const velRow = page.locator('#stepPopup [data-row="velocity"]');
   const acidBtn = page.locator('.inst-btn').nth(0);
   const fmBtn = page.locator('.inst-btn').nth(1);
 
-  // ACID mode: right-click does NOT open the popup.
+  // ACID mode: right-click opens the popup (universal rows), but FM rows hidden.
   await acidStep.click({ button: 'right' });
-  await expect(popup).toBeHidden();
+  await expect(popup).toBeVisible();
+  await expect(velRow).toBeVisible();
+  await expect(fmRatioRow).toBeHidden();
 
-  // FM mode: right-click opens it.
+  // FM mode: right-click shows the popup with FM rows visible.
   await fmBtn.click();
   await acidStep.click({ button: 'right' });
   await expect(popup).toBeVisible();
+  await expect(fmRatioRow).toBeVisible();
 
-  // switching back to ACID closes it. Dispatch directly: the open popup
-  // overlaps the ACID button, and we're testing the handler, not the hit-test.
+  // switching back to ACID closes the popup (see setAcidInstrument).
   await acidBtn.dispatchEvent('click');
   await expect(popup).toBeHidden();
 });

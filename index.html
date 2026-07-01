@@ -445,17 +445,37 @@
       <p class="export-hint">renders your pattern to a .zip — kick / snare / hat / acid stems, a full mix (WAV) and a MIDI file.</p>
     </div>
     <button class="synth-modal-done mono" id="synthDone" type="button">✕ Close</button>
-    <div class="fm-popup" id="fmPopup" hidden>
+    <div class="fm-popup" id="stepPopup" hidden>
       <div class="fm-popup-head mono">
-        <span><b id="fmPopupStep">bar 1 · step 1</b> · FM</span>
-        <button class="fm-popup-close" id="fmPopupClose" type="button">✕</button>
+        <span><b id="stepPopupTitle">bar 1 · step 1 · KICK</b></span>
+        <button class="fm-popup-close" id="stepPopupClose" type="button">✕</button>
       </div>
-      <div class="fm-popup-row mono">
+      <div class="fm-popup-row mono" data-row="velocity">
+        <span>VEL</span>
+        <input type="range" id="stepVelInput" min="0" max="100" step="1" value="100">
+        <b id="stepVelVal">100</b>
+      </div>
+      <div class="fm-popup-row mono" data-row="timing">
+        <span>TIME</span>
+        <input type="range" id="stepTimingInput" min="-50" max="50" step="1" value="0">
+        <b id="stepTimingVal">0</b>
+      </div>
+      <div class="fm-popup-row mono" data-row="decay" hidden>
+        <span>DECAY</span>
+        <input type="range" id="hatDecayInput" min="0" max="100" step="1" value="50">
+        <b id="hatDecayVal">50</b>
+      </div>
+      <div class="fm-popup-row mono" data-row="accent" hidden>
+        <span>ACCENT</span>
+        <input type="range" id="acidAccentInput" min="0" max="1" step="1" value="0">
+        <b id="acidAccentVal">off</b>
+      </div>
+      <div class="fm-popup-row mono" data-row="fmRatio" hidden>
         <span>RATIO</span>
         <input type="range" id="fmRatioInput" min="0.25" max="8" step="0.25" value="2">
         <b id="fmRatioVal">2.00</b>
       </div>
-      <div class="fm-popup-row mono">
+      <div class="fm-popup-row mono" data-row="fmIndex" hidden>
         <span>INDEX</span>
         <input type="range" id="fmIndexInput" min="0" max="400" step="5" value="120">
         <b id="fmIndexVal">120</b>
