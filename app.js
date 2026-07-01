@@ -387,7 +387,103 @@ const STEP_TIMING = {                          // -50..+50 (percent of STEP_SECO
 const HAT_DECAY = new Array(STEPS).fill(50);   // 0=closed/short, 100=open/long, 50=default 1x
 
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-function noteName(m){ return NOTE_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1); }
+// noteName handles fractional MIDI values by rounding to the nearest semitone
+// and (for non-12-TET scales) appending a cent-offset. Integer input → same
+// label as before. Fractional → "C4+50c" etc.
+function noteName(m){
+  const rounded = Math.round(m);
+  const cents = Math.round((m - rounded) * 100);
+  const base = NOTE_NAMES[((rounded % 12) + 12) % 12] + (Math.floor(rounded / 12) - 1);
+  if(Math.abs(cents) < 5) return base;
+  return base + (cents > 0 ? '+' : '') + cents + 'c';
+}
+
+/* ---- scale locking ----
+   Scale = { name, tuning: EDO divisions per octave, degrees: sorted 0..tuning-1 }.
+   snapToScale(midi) rounds a semitone float to the nearest allowed pitch given
+   the current scale + root. Applied by the pitch-drag handler, randomize, and
+   evolve, so every path that writes ACID_NOTES respects the scale.
+   Root is a semitone offset 0..11 (C..B), regardless of tuning — same physical
+   pitch across scales, just different scale-degree meaning. */
+const SCALES = [
+  // 12-TET modes + classics
+  { name: 'chromatic',          tuning: 12, degrees: [0,1,2,3,4,5,6,7,8,9,10,11] },
+  { name: 'major (ionian)',     tuning: 12, degrees: [0,2,4,5,7,9,11] },
+  { name: 'dorian',             tuning: 12, degrees: [0,2,3,5,7,9,10] },
+  { name: 'phrygian',           tuning: 12, degrees: [0,1,3,5,7,8,10] },
+  { name: 'lydian',             tuning: 12, degrees: [0,2,4,6,7,9,11] },
+  { name: 'mixolydian',         tuning: 12, degrees: [0,2,4,5,7,9,10] },
+  { name: 'aeolian (min)',      tuning: 12, degrees: [0,2,3,5,7,8,10] },
+  { name: 'locrian',            tuning: 12, degrees: [0,1,3,5,6,8,10] },
+  { name: 'harmonic minor',     tuning: 12, degrees: [0,2,3,5,7,8,11] },
+  { name: 'melodic minor',      tuning: 12, degrees: [0,2,3,5,7,9,11] },
+  { name: 'diminished (WH)',    tuning: 12, degrees: [0,2,3,5,6,8,9,11] },
+  { name: 'whole tone (aug)',   tuning: 12, degrees: [0,2,4,6,8,10] },
+  { name: 'pentatonic major',   tuning: 12, degrees: [0,2,4,7,9] },
+  { name: 'pentatonic minor',   tuning: 12, degrees: [0,3,5,7,10] },
+  { name: 'blues',              tuning: 12, degrees: [0,3,5,6,7,10] },
+  // Indian ragas (12-TET approximations)
+  { name: 'raga bhairav',       tuning: 12, degrees: [0,1,4,5,7,8,11] },
+  { name: 'raga yaman',         tuning: 12, degrees: [0,2,4,6,7,9,11] },
+  { name: 'raga marwa',         tuning: 12, degrees: [0,1,4,6,9,11] },
+  // Microtonal — 24-TET quarter-tones (Arabic maqam approximations)
+  { name: '24-TET rast',        tuning: 24, degrees: [0,4,7,10,14,18,21] },
+  { name: '24-TET bayati',      tuning: 24, degrees: [0,3,6,10,14,17,20] },
+  // Microtonal — 19-TET diatonic (Yasser)
+  { name: '19-TET diatonic',    tuning: 19, degrees: [0,3,6,8,11,14,17] },
+  // Microtonal — 22-TET (Indian shruti-ish)
+  { name: '22-TET shadja',      tuning: 22, degrees: [0,4,7,9,13,17,20] },
+];
+let currentScaleName = 'chromatic';
+let currentScaleRoot = 0; // 0=C ... 11=B
+function currentScale(){ return SCALES.find(s => s.name === currentScaleName) || SCALES[0]; }
+
+// Precomputed sorted list of allowed float-MIDI pitches within [ACID_NOTE_MIN,
+// ACID_NOTE_MAX] for the current scale. Rebuilt on scale/root change; nearest-
+// pitch lookup is a single binary-ish search.
+let _scaleGrid = [];
+function rebuildScaleGrid(){
+  const sc = currentScale();
+  const step = 12 / sc.tuning; // semitones per tuning-step
+  const out = [];
+  // Sweep octaves that could contain values in range; enough padding on both ends.
+  for(let oct = -1; oct <= 8; oct++){
+    for(const d of sc.degrees){
+      const m = 12 * (oct + 1) + currentScaleRoot + d * step;
+      if(m >= ACID_NOTE_MIN - 0.5 && m <= ACID_NOTE_MAX + 0.5) out.push(m);
+    }
+  }
+  out.sort((a, b) => a - b);
+  _scaleGrid = out;
+}
+function snapToScale(midi){
+  if(!_scaleGrid.length) rebuildScaleGrid();
+  // clamp then find nearest
+  midi = Math.max(ACID_NOTE_MIN, Math.min(ACID_NOTE_MAX, midi));
+  let best = _scaleGrid[0], bestD = Math.abs(midi - best);
+  for(let i = 1; i < _scaleGrid.length; i++){
+    const d = Math.abs(midi - _scaleGrid[i]);
+    if(d < bestD){ best = _scaleGrid[i]; bestD = d; }
+    else if(_scaleGrid[i] > midi && d > bestD) break; // monotonic past nearest
+  }
+  return best;
+}
+function scalePickRandom(){
+  if(!_scaleGrid.length) rebuildScaleGrid();
+  return _scaleGrid[Math.floor(Math.random() * _scaleGrid.length)];
+}
+function resnapAllAcidNotes(){
+  for(let i = 0; i < ACID_NOTES.length; i++) ACID_NOTES[i] = snapToScale(ACID_NOTES[i]);
+}
+function setScale(name, root){
+  if(name !== undefined) currentScaleName = name;
+  if(root !== undefined) currentScaleRoot = ((root % 12) + 12) % 12;
+  rebuildScaleGrid();
+  resnapAllAcidNotes();
+  renderPage();
+  renderMiniGrid(miniGridBar);
+  saveStateSoon();
+}
 
 const pattern = {};
 TRACKS.forEach(t => pattern[t.id] = DEFAULT_PATTERN[t.id].slice());
@@ -441,6 +537,7 @@ function saveStateNow(){
       trackSends: evolving && preEvolveSnapshot ? preEvolveSnapshot.sends : trackSendValues,
       trackMute, trackSolo, trackTranspose,
       stepVelocity: STEP_VELOCITY, stepTiming: STEP_TIMING, hatDecay: HAT_DECAY,
+      scaleName: currentScaleName, scaleRoot: currentScaleRoot,
       fx: {
         delayBus: delayBusValue, reverbBus: reverbBusValue,
         delayFb: delayFbValue, delayDiv: delayDivIndex, delayTone,
@@ -501,6 +598,8 @@ addEventListener('visibilitychange', () => {
   if(s.stepVelocity) Object.keys(STEP_VELOCITY).forEach(id => replaceArr(STEP_VELOCITY[id], s.stepVelocity[id]));
   if(s.stepTiming)   Object.keys(STEP_TIMING).forEach(id => replaceArr(STEP_TIMING[id], s.stepTiming[id]));
   replaceArr(HAT_DECAY, s.hatDecay);
+  if(typeof s.scaleName === 'string' && SCALES.some(sc => sc.name === s.scaleName)) currentScaleName = s.scaleName;
+  if(typeof s.scaleRoot === 'number') currentScaleRoot = ((s.scaleRoot % 12) + 12) % 12;
   if(s.fx){
     const fx = s.fx;
     if(typeof fx.delayBus === 'number')   delayBusValue  = fx.delayBus;
@@ -664,7 +763,10 @@ TRACKS.forEach((track, ti)=>{
         }
         if(axis !== 'y') return;
         const semis = Math.round((startY - e.clientY) / PX_PER_SEMITONE);
-        const next = Math.max(ACID_NOTE_MIN, Math.min(ACID_NOTE_MAX, startNote + semis));
+        // Scale-lock: snap raw semitone drag onto the nearest allowed pitch
+        // in the current scale. Chromatic is a no-op (every semitone allowed).
+        const raw = Math.max(ACID_NOTE_MIN, Math.min(ACID_NOTE_MAX, startNote + semis));
+        const next = snapToScale(raw);
         const i = absStep(s);
         if(next !== ACID_NOTES[i]){
           ACID_NOTES[i] = next;
@@ -1122,6 +1224,36 @@ const adsrKnobCtl  = makeLabeledKnob('ADSR',  adsrScale,
   'ADSR time scaling — stretches voice envelopes');
 ctrlRowEl.appendChild(swingKnobCtl.wrap);
 ctrlRowEl.appendChild(adsrKnobCtl.wrap);
+
+// Scale + root selectors. Two <select>s wrapped in a .tempo-ctrl-shaped chip
+// so they match the visual weight of BPM/SWING/ADSR. Changing either snaps
+// every existing acid step to the new scale (see setScale()).
+const scaleWrap = document.createElement('div');
+scaleWrap.className = 'tempo-ctrl scale-ctrl';
+scaleWrap.title = 'Scale lock — constrains acid pitch (drag / randomize / evolve)';
+const scaleLabel = document.createElement('span');
+scaleLabel.className = 'tempo-label mono';
+scaleLabel.textContent = 'SCALE';
+const rootSel = document.createElement('select');
+rootSel.className = 'scale-select mono';
+NOTE_NAMES.forEach((n, i) => {
+  const o = document.createElement('option');
+  o.value = i; o.textContent = n;
+  rootSel.appendChild(o);
+});
+rootSel.value = currentScaleRoot;
+rootSel.addEventListener('change', () => setScale(undefined, +rootSel.value));
+const scaleSel = document.createElement('select');
+scaleSel.className = 'scale-select mono';
+SCALES.forEach(s => {
+  const o = document.createElement('option');
+  o.value = s.name; o.textContent = s.name;
+  scaleSel.appendChild(o);
+});
+scaleSel.value = currentScaleName;
+scaleSel.addEventListener('change', () => setScale(scaleSel.value));
+scaleWrap.append(scaleLabel, rootSel, scaleSel);
+ctrlRowEl.appendChild(scaleWrap);
 
 function makeImpulseResponse(ctx, duration, decay){
   const rate = ctx.sampleRate;
@@ -2079,7 +2211,7 @@ function rndSteps(id){
 }
 function rndPitch(){
   const n = totalSteps();
-  for(let i = 0; i < n; i++) ACID_NOTES[i] = _ri(ACID_NOTE_MIN, ACID_NOTE_MAX);
+  for(let i = 0; i < n; i++) ACID_NOTES[i] = scalePickRandom();
 }
 function rndFmRatio(){
   const n = totalSteps();
@@ -2262,7 +2394,8 @@ function evolveAcidPitch(){
   if(!active.length) return false;
   const i = _rp(active);
   const delta = _rp([-3,-2,-1,1,2,3]);
-  ACID_NOTES[i] = Math.max(ACID_NOTE_MIN, Math.min(ACID_NOTE_MAX, ACID_NOTES[i] + delta));
+  const shifted = Math.max(ACID_NOTE_MIN, Math.min(ACID_NOTE_MAX, ACID_NOTES[i] + delta));
+  ACID_NOTES[i] = snapToScale(shifted);
   return true;
 }
 function evolveFmTweak(){
@@ -2440,3 +2573,10 @@ renderPage();
 setAcidInstrument(acidInstrument);
 swingKnobCtl.setValue((swingPct - 50) * 4);
 adsrKnobCtl.setValue(adsrScale);
+// Scale grid + selector sync from loadState. If the loaded state has a saved
+// scale, resnap: this catches any leftover chromatic notes that don't fit the
+// scale (edge case if the schema was ever edited manually). No-op for chromatic.
+rebuildScaleGrid();
+scaleSel.value = currentScaleName;
+rootSel.value = currentScaleRoot;
+if(currentScaleName !== 'chromatic'){ resnapAllAcidNotes(); renderPage(); renderMiniGrid(miniGridBar); }

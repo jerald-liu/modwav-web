@@ -844,6 +844,24 @@
     outline: none;
     cursor: ns-resize;
   }
+  /* Scale-lock chip inside .ctrl-row: two native <select>s (root + scale name)
+     styled to sit in a .tempo-ctrl shell. Native selects for zero-code menu
+     handling + mobile friendliness. Sized so the whole ctrl-row stays on ONE
+     line at desktop width (modal max-height:90vh is tight under body zoom:1.25;
+     wrapping the row would push it past the limit). */
+  .tempo-ctrl.scale-ctrl{ cursor: default; gap: 0.35rem; padding: 0.35rem 0.5rem; }
+  .scale-select{
+    background: none;
+    border: none;
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem;
+    padding: 0 0.15rem;
+    cursor: pointer;
+    outline: none;
+    max-width: 110px;
+  }
+  .scale-select option{ background: #0E0E0D; color: var(--ink); }
   .tempo-input:focus{ cursor: text; }
   .tempo-input::-webkit-outer-spin-button,
   .tempo-input::-webkit-inner-spin-button{ -webkit-appearance: none; margin: 0; }
@@ -957,8 +975,12 @@
 
   .ctrl-row{
     display:flex;
-    gap: 1.6rem;
-    flex-wrap: wrap;
+    gap: 0.9rem;
+    /* nowrap + horizontal scroll — the modal already sits at max-height:90vh,
+       and letting the row wrap onto a second line pushed content past that
+       (visible bug: (5,5) clicks on .synth-modal missed under body zoom:1.25). */
+    flex-wrap: nowrap;
+    overflow-x: auto;
     align-items: center;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.68rem;
