@@ -480,14 +480,18 @@ TRACKS.forEach((track, ti)=>{
     soloBtn.classList.toggle('active', trackSolo[track.id]);
     saveStateSoon();
   });
-  // Per-track octave pill: vertical-drag transpose ±12 semitones. Lives inline
-  // with M/S inside .track-ctrl to keep .seq-label single-row (modal height
-  // constraint — see CSS comment).
-  const oct = makeOctavePill(track.id);
-  transposeCtls[track.id] = oct;
-  ctrl.append(oct.el, muteBtn, soloBtn);
+  ctrl.append(muteBtn, soloBtn);
   label.appendChild(ctrl);
   seqEl.appendChild(label);
+  // OCT pill goes into its own grid cell (column 2), separate from .track-ctrl.
+  // Keeps M/S aligned with the unmute-all button above and leaves the label
+  // cell wide enough for ACID+FM.
+  const oct = makeOctavePill(track.id);
+  transposeCtls[track.id] = oct;
+  const octCell = document.createElement('div');
+  octCell.className = 'seq-oct-cell';
+  octCell.appendChild(oct.el);
+  seqEl.appendChild(octCell);
 
   const row = document.createElement('div');
   row.className = 'seq-row';
@@ -620,6 +624,11 @@ TRACKS.forEach((track, ti)=>{
   busLabel.className = 'seq-label seq-bus-label mono';
   busLabel.innerHTML = '<span>FX BUS</span>';
   seqEl.appendChild(busLabel);
+
+  // OCT column has no bus control — empty placeholder cell keeps the grid aligned.
+  const octSpacer = document.createElement('div');
+  octSpacer.className = 'seq-bus-spacer';
+  seqEl.appendChild(octSpacer);
 
   const spacer = document.createElement('div'); // occupies the steps column
   spacer.className = 'seq-bus-spacer';
