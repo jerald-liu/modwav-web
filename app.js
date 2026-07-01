@@ -491,7 +491,7 @@ TRACKS.forEach(t => pattern[t.id] = DEFAULT_PATTERN[t.id].slice());
 const trackMute = {};
 const trackSolo = {};
 const muteButtons = {};
-// Per-track transposition in semitones, range -12..+12 (±1 octave). Applied as
+// Per-track transposition in semitones, range -24..+24 (±2 octaves). Applied as
 // a frequency multiplier inside each voice fn: 2^(semitones/12). Synths shift
 // the MIDI note before midiToFreq; drums multiply their oscillator frequencies.
 const trackTranspose = { kick: 0, snare: 0, hat: 0, acid: 0 };
@@ -593,7 +593,7 @@ addEventListener('visibilitychange', () => {
   if(s.trackSolo) Object.assign(trackSolo, s.trackSolo);
   if(s.trackTranspose) Object.keys(trackTranspose).forEach(id => {
     const v = s.trackTranspose[id];
-    if(typeof v === 'number') trackTranspose[id] = Math.max(-12, Math.min(12, Math.round(v)));
+    if(typeof v === 'number') trackTranspose[id] = Math.max(-24, Math.min(24, Math.round(v)));
   });
   if(s.stepVelocity) Object.keys(STEP_VELOCITY).forEach(id => replaceArr(STEP_VELOCITY[id], s.stepVelocity[id]));
   if(s.stepTiming)   Object.keys(STEP_TIMING).forEach(id => replaceArr(STEP_TIMING[id], s.stepTiming[id]));
@@ -1078,19 +1078,19 @@ function makeKnob(value, onInput, title){
   return knob;
 }
 
-// Octave pill: ±12 semitone vertical-drag transposer per track. Same gesture as
+// Octave pill: ±24 semitone vertical-drag transposer per track. Same gesture as
 // the BPM pill (drag up/down, ns-resize cursor) but smaller, and rendered as a
 // .tempo-ctrl with the .octave modifier. Returns { el, setValue(semitones) }.
 function makeOctavePill(trackId){
   const PX_PER_SEMI = 6;
   const el = document.createElement('div');
   el.className = 'tempo-ctrl octave';
-  el.title = `${trackId} transpose: drag for ±12 semitones, double-click to reset`;
+  el.title = `${trackId} transpose: drag for ±24 semitones, double-click to reset`;
   const val = document.createElement('span');
   val.className = 'tempo-label mono octave-val';
   function fmt(n){ return (n > 0 ? '+' : '') + n; }
   function setVal(v){
-    v = Math.max(-12, Math.min(12, Math.round(v)));
+    v = Math.max(-24, Math.min(24, Math.round(v)));
     trackTranspose[trackId] = v;
     val.textContent = fmt(v);
   }
@@ -2222,7 +2222,7 @@ function rndFmIndex(){
   for(let i = 0; i < n; i++) FM_INDEX[i] = _ri(0, 80) * 5;                  // 0–400 step 5
 }
 function rndOctave(id){
-  const v = _ri(-12, 12);
+  const v = _ri(-24, 24);
   transposeCtls[id]?.setValue(v);
 }
 function rndSend(id, kind){
